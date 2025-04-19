@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корпоративный Портал</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --border-color: #dcdde1;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --hover-color: #2980b9;
+            --card-bg: #ffffff;
+            --success-color: #00875a;
+            --error-color: #de350b;
+            --info-color: #0052cc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px var(--shadow-color);
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-primary:hover, .btn-secondary:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px);
+        }
+
+        .auth-forms {
+            max-width: 400px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        .auth-forms h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-color);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        main {
+            margin-top: 80px;
+            padding: 2rem 0;
+        }
+
+        .user-profile {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .profile-info h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .profile-stats span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--secondary-color);
+        }
+
+        .post-creation {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 2rem;
+        }
+
+        .post-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .post-form textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 100px;
+            font-size: 1rem;
+        }
+
+        .post-form textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .file-upload {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-label {
+            padding: 0.5rem 1rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-label:hover {
+            background-color: var(--hover-color);
+        }
+
+        .post-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .post-preview img, .post-preview video {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+
+        .posts-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-filter {
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-filter.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .posts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .post {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .post-author {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .post-date {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .post-content {
+            margin-bottom: 1rem;
+        }
+
+        .post-media {
+            margin-bottom: 1rem;
+        }
+
+        .post-media img, .post-media video {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .post-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .post-actions button:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .profile-actions {
+                justify-content: center;
+            }
+
+            .posts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <h1>Корпоративный Портал</h1>
+            </div>
+            <div class="auth-buttons">
+                <button id="loginBtn" class="btn-primary" onclick="showAuthForms()">
+                    <i class="fas fa-sign-in-alt"></i> Вход
+                </button>
+                <button id="registerBtn" class="btn-secondary" onclick="showAuthForms()">
+                    <i class="fas fa-user-plus"></i> Регистрация
+                </button>
+            </div>
+        </header>
+
+        <div class="auth-forms" style="display: none;">
+            <div class="login-form">
+                <h2>Вход в систему</h2>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="loginUsername" placeholder="Корпоративный email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Пароль" required>
+                </div>
+                <button class="btn-primary" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+            </div>
+
+            <div class="register-form" style="display: none;">
+                <h2>Регистрация сотрудника</h2>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerUsername" placeholder="ФИО" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="Корпоративный email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="Пароль" required>
+                </div>
+                <button class="btn-primary" onclick="register()">
+                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                </button>
+            </div>
+        </div>
+
+        <main class="content" style="display: none;">
+            <div class="user-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="profile-info">
+                        <h2>Добро пожаловать, <span id="currentUsername"></span></h2>
+                        <div class="profile-stats">
+                            <span><i class="fas fa-file-alt"></i> Документов: <span id="postCount">0</span></span>
+                            <span><i class="fas fa-thumbs-up"></i> Одобрений: <span id="likeCount">0</span></span>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn-secondary" onclick="window.location.href='profile.html'">
+                                <i class="fas fa-user"></i> Профиль
+                            </button>
+                            <button class="btn-secondary" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="post-creation">
+                <form class="post-form" onsubmit="createPost(); return false;">
+                    <textarea id="postContent" placeholder="Опубликовать документ или сообщение..." required></textarea>
+                    <div class="file-upload">
+                        <label for="mediaInput" class="file-label">
+                            <i class="fas fa-paperclip"></i> Прикрепить файл
+                        </label>
+                        <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" onchange="handleFileSelect(event)">
+                    </div>
+                    <div id="postPreview" class="post-preview">
+                        <img id="imagePreview" style="display: none;">
+                        <video id="videoPreview" style="display: none;" controls></video>
+                        <div id="filePreview" class="file-preview" style="display: none;">
+                            <i class="fas fa-file"></i>
+                            <span id="fileName"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Опубликовать
+                    </button>
+                </form>
+            </div>
+
+            <div class="posts-filters">
+                <button class="btn-filter active" onclick="filterPosts('all')">
+                    <i class="fas fa-list"></i> Все документы
+                </button>
+                <button class="btn-filter" onclick="filterPosts('my')">
+                    <i class="fas fa-user"></i> Мои документы
+                </button>
+            </div>
+
+            <div id="postsContainer" class="posts-container">
+                <!-- Посты будут добавляться здесь -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let posts = JSON.parse(localStorage.getItem('posts')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
+        function showAuthForms() {
+            const authForms = document.querySelector('.auth-forms');
+            const loginForm = document.querySelector('.login-form');
+            const registerForm = document.querySelector('.register-form');
+            
+            authForms.style.display = 'block';
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+        }
+
+        function showRegisterForm() {
+            const loginForm = document.querySelector('.login-form');
+            const registerForm = document.querySelector('.register-form');
+            
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        }
+
+        function showContent() {
+            const authForms = document.querySelector('.auth-forms');
+            const content = document.querySelector('.content');
+            
+            authForms.style.display = 'none';
+            content.style.display = 'block';
+            
+            if (currentUser) {
+                document.getElementById('currentUsername').textContent = currentUser.username;
+                updateUserStats();
+            }
+        }
+
+        function register() {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            if (!username || !email || !password) {
+                alert('Пожалуйста, заполните все поля');
+                return;
+            }
+
+            if (users.some(user => user.email === email)) {
+                alert('Пользователь с таким email уже существует');
+                return;
+            }
+
+            const newUser = {
+                username,
+                email,
+                password,
+                posts: [],
+                likes: 0,
+                joinDate: new Date().toISOString()
+            };
+
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            currentUser = newUser;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            showContent();
+            alert('Регистрация успешна!');
+        }
+
+        function login() {
+            const email = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showContent();
+            } else {
+                alert('Неверный email или пароль');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('postPreview');
+            const imagePreview = document.getElementById('imagePreview');
+            const videoPreview = document.getElementById('videoPreview');
+            const filePreview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+
+            if (file.type.startsWith('image/')) {
+                imagePreview.src = URL.createObjectURL(file);
+                imagePreview.style.display = 'block';
+                videoPreview.style.display = 'none';
+                filePreview.style.display = 'none';
+            } else if (file.type.startsWith('video/')) {
+                videoPreview.src = URL.createObjectURL(file);
+                videoPreview.style.display = 'block';
+                imagePreview.style.display = 'none';
+                filePreview.style.display = 'none';
+            } else {
+                fileName.textContent = file.name;
+                filePreview.style.display = 'flex';
+                imagePreview.style.display = 'none';
+                videoPreview.style.display = 'none';
+            }
+        }
+
+        function createPost() {
+            if (!currentUser) {
+                alert('Пожалуйста, войдите в систему');
+                return;
+            }
+
+            const content = document.getElementById('postContent').value;
+            const mediaInput = document.getElementById('mediaInput');
+            const file = mediaInput.files[0];
+
+            if (!content && !file) {
+                alert('Пожалуйста, введите текст или прикрепите файл');
+                return;
+            }
+
+            const newPost = {
+                id: Date.now(),
+                author: currentUser.username,
+                content,
+                media: file ? {
+                    name: file.name,
+                    type: file.type,
+                    url: URL.createObjectURL(file)
+                } : null,
+                likes: 0,
+                date: new Date().toISOString()
+            };
+
+            posts.push(newPost);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            currentUser.posts.push(newPost.id);
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            document.getElementById('postContent').value = '';
+            mediaInput.value = '';
+            document.getElementById('postPreview').style.display = 'none';
+            
+            displayPosts();
+            updateUserStats();
+        }
+
+        function updateUserStats() {
+            if (!currentUser) return;
+
+            const userPosts = posts.filter(post => post.author === currentUser.username);
+            const totalLikes = userPosts.reduce((sum, post) => sum + post.likes, 0);
+
+            document.getElementById('postCount').textContent = userPosts.length;
+            document.getElementById('likeCount').textContent = totalLikes;
+        }
+
+        function displayPosts(filter = 'all') {
+            const postsContainer = document.getElementById('postsContainer');
+            if (!postsContainer) return;
+
+            let filteredPosts = posts;
+            if (filter === 'my' && currentUser) {
+                filteredPosts = posts.filter(post => post.author === currentUser.username);
+            }
+
+            postsContainer.innerHTML = filteredPosts.map(post => `
+                <div class="post">
+                    <div class="post-header">
+                        <span class="post-author">${post.author}</span>
+                        <span class="post-date">${new Date(post.date).toLocaleString()}</span>
+                    </div>
+                    <div class="post-content">${post.content}</div>
+                    ${post.media ? `
+                        <div class="post-media">
+                            ${post.media.type.startsWith('image/') ? 
+                                `<img src="${post.media.url}" alt="${post.media.name}">` :
+                            post.media.type.startsWith('video/') ?
+                                `<video src="${post.media.url}" controls></video>` :
+                                `<div class="file-preview">
+                                    <i class="fas fa-file"></i>
+                                    <span>${post.media.name}</span>
+                                </div>`
+                            }
+                        </div>
+                    ` : ''}
+                    <div class="post-actions">
+                        <button onclick="likePost(${post.id})">
+                            <i class="fas fa-thumbs-up"></i> ${post.likes}
+                        </button>
+                        ${post.author === currentUser?.username ? `
+                            <button onclick="deletePost(${post.id})">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function likePost(postId) {
+            if (!currentUser) {
+                alert('Пожалуйста, войдите в систему');
+                return;
+            }
+
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.likes++;
+                localStorage.setItem('posts', JSON.stringify(posts));
+                displayPosts();
+            }
+        }
+
+        function deletePost(postId) {
+            if (!currentUser) return;
+
+            const postIndex = posts.findIndex(p => p.id === postId);
+            if (postIndex !== -1 && posts[postIndex].author === currentUser.username) {
+                posts.splice(postIndex, 1);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                displayPosts();
+                updateUserStats();
+            }
+        }
+
+        function filterPosts(filter) {
+            const buttons = document.querySelectorAll('.btn-filter');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            displayPosts(filter);
+        }
+
+        // Инициализация при загрузке страницы
+        if (currentUser) {
+            showContent();
+        }
+    </script>
+</body>
+</html> 
