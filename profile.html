@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Моя Социальная Сеть</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-users"></i>
+                <h1>Моя Социальная Сеть</h1>
+            </div>
+            <div class="auth-buttons">
+                <button onclick="window.location.href='index.html'" class="btn-primary">
+                    <i class="fas fa-home"></i> Главная
+                </button>
+                <button onclick="logout()" class="btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </button>
+            </div>
+        </header>
+
+        <main class="profile-content">
+            <div class="profile-header-section">
+                <div class="profile-cover">
+                    <div class="cover-image"></div>
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h2 id="profileUsername"></h2>
+                    <div class="profile-stats">
+                        <span><i class="fas fa-pen"></i> Постов: <span id="profilePostCount">0</span></span>
+                        <span><i class="fas fa-heart"></i> Лайков: <span id="profileLikeCount">0</span></span>
+                        <span><i class="fas fa-users"></i> Подписчиков: <span id="profileFollowers">0</span></span>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn-primary" onclick="editProfile()">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-tabs">
+                <button class="tab-btn active" onclick="showTab('posts')">
+                    <i class="fas fa-newspaper"></i> Посты
+                </button>
+                <button class="tab-btn" onclick="showTab('about')">
+                    <i class="fas fa-info-circle"></i> О себе
+                </button>
+                <button class="tab-btn" onclick="showTab('settings')">
+                    <i class="fas fa-cog"></i> Настройки
+                </button>
+            </div>
+
+            <div class="tab-content">
+                <div id="posts-tab" class="tab-pane active">
+                    <div class="posts-filters">
+                        <button class="btn-filter active" onclick="filterProfilePosts('all')">Все посты</button>
+                        <button class="btn-filter" onclick="filterProfilePosts('popular')">Популярные</button>
+                        <button class="btn-filter" onclick="filterProfilePosts('recent')">Недавние</button>
+                    </div>
+                    <div class="posts-container" id="profilePostsContainer">
+                        <!-- Посты пользователя будут добавляться здесь -->
+                    </div>
+                </div>
+
+                <div id="about-tab" class="tab-pane">
+                    <div class="about-section">
+                        <h3><i class="fas fa-user"></i> Информация</h3>
+                        <div class="info-item">
+                            <span class="info-label">Имя:</span>
+                            <span id="profileName">Не указано</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email:</span>
+                            <span id="profileEmail">Не указан</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Дата регистрации:</span>
+                            <span id="profileJoinDate">Не указана</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">О себе:</span>
+                            <p id="profileBio">Не указано</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings-tab" class="tab-pane">
+                    <div class="settings-section">
+                        <h3><i class="fas fa-cog"></i> Настройки аккаунта</h3>
+                        <div class="setting-item">
+                            <label>Изменить пароль</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="currentPassword" placeholder="Текущий пароль">
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="newPassword" placeholder="Новый пароль">
+                            </div>
+                            <button class="btn-primary" onclick="changePassword()">
+                                <i class="fas fa-save"></i> Сохранить
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label>Уведомления</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="notifyLikes" checked>
+                                <label for="notifyLikes">Уведомления о лайках</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="notifyComments" checked>
+                                <label for="notifyComments">Уведомления о комментариях</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 

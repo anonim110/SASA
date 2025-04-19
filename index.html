@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корпоративный Портал</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <h1>Корпоративный Портал</h1>
+            </div>
+            <div class="auth-buttons">
+                <button id="loginBtn" class="btn-primary" onclick="showAuthForms()">
+                    <i class="fas fa-sign-in-alt"></i> Вход
+                </button>
+                <button id="registerBtn" class="btn-secondary" onclick="showAuthForms()">
+                    <i class="fas fa-user-plus"></i> Регистрация
+                </button>
+            </div>
+        </header>
+
+        <div class="auth-forms" style="display: none;">
+            <div class="login-form">
+                <h2>Вход в систему</h2>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="loginUsername" placeholder="Корпоративный email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Пароль" required>
+                </div>
+                <button class="btn-primary" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+            </div>
+
+            <div class="register-form" style="display: none;">
+                <h2>Регистрация сотрудника</h2>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerUsername" placeholder="ФИО" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="Корпоративный email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="Пароль" required>
+                </div>
+                <button class="btn-primary" onclick="register()">
+                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                </button>
+            </div>
+        </div>
+
+        <main class="content" style="display: none;">
+            <div class="user-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="profile-info">
+                        <h2>Добро пожаловать, <span id="currentUsername"></span></h2>
+                        <div class="profile-stats">
+                            <span><i class="fas fa-file-alt"></i> Документов: <span id="postCount">0</span></span>
+                            <span><i class="fas fa-thumbs-up"></i> Одобрений: <span id="likeCount">0</span></span>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn-secondary" onclick="window.location.href='profile.html'">
+                                <i class="fas fa-user"></i> Профиль
+                            </button>
+                            <button class="btn-secondary" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="post-creation">
+                <form class="post-form" onsubmit="createPost(); return false;">
+                    <textarea id="postContent" placeholder="Опубликовать документ или сообщение..." required></textarea>
+                    <div class="file-upload">
+                        <label for="mediaInput" class="file-label">
+                            <i class="fas fa-paperclip"></i> Прикрепить файл
+                        </label>
+                        <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" onchange="handleFileSelect(event)">
+                    </div>
+                    <div id="postPreview" class="post-preview">
+                        <img id="imagePreview" style="display: none;">
+                        <video id="videoPreview" style="display: none;" controls></video>
+                        <div id="filePreview" class="file-preview" style="display: none;">
+                            <i class="fas fa-file"></i>
+                            <span id="fileName"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Опубликовать
+                    </button>
+                </form>
+            </div>
+
+            <div class="posts-filters">
+                <button class="btn-filter active" onclick="filterPosts('all')">
+                    <i class="fas fa-list"></i> Все документы
+                </button>
+                <button class="btn-filter" onclick="filterPosts('my')">
+                    <i class="fas fa-user"></i> Мои документы
+                </button>
+            </div>
+
+            <div id="postsContainer" class="posts-container">
+                <!-- Посты будут добавляться здесь -->
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
