@@ -1,26 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Корпоративный Портал</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <title>Cyber Terminal</title>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #3498db;
-            --background-color: #f5f6fa;
-            --text-color: #2c3e50;
-            --border-color: #dcdde1;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --hover-color: #2980b9;
-            --card-bg: #ffffff;
-            --success-color: #00875a;
-            --error-color: #de350b;
-            --info-color: #0052cc;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
         * {
             margin: 0;
@@ -29,709 +14,1020 @@
         }
 
         body {
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 1rem 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 5px var(--shadow-color);
-        }
-
-        header .container {
+            background-color: #0a0a0a;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo i {
-            font-size: 1.5rem;
-        }
-
-        .logo h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-primary, .btn-secondary {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-primary:hover, .btn-secondary:hover {
-            background-color: var(--hover-color);
-            transform: translateY(-2px);
-        }
-
-        .auth-forms {
-            max-width: 400px;
-            margin: 2rem auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-        }
-
-        .auth-forms h2 {
-            margin-bottom: 1.5rem;
-            color: var(--primary-color);
-            text-align: center;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary-color);
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 0.8rem 1rem 0.8rem 2.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-
-        main {
-            margin-top: 80px;
-            padding: 2rem 0;
-        }
-
-        .user-profile {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            margin-bottom: 2rem;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 2rem;
-        }
-
-        .profile-info h2 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-
-        .profile-stats {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .profile-stats span {
-            display: flex;
             align-items: center;
-            gap: 8px;
-            color: var(--secondary-color);
+            min-height: 100vh;
+            font-family: 'Share Tech Mono', monospace;
+            position: relative;
+            overflow: hidden;
         }
 
-        .post-creation {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            margin-bottom: 2rem;
-        }
-
-        .post-form {
+        .language-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            gap: 10px;
+            z-index: 1001;
         }
 
-        .post-form textarea {
+        .lang-btn {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .lang-btn.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .hack-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            resize: vertical;
-            min-height: 100px;
-            font-size: 1rem;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
         }
 
-        .post-form textarea:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        .binary-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.1) 0px,
+                rgba(0, 255, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            animation: binaryRain 0.5s linear infinite;
         }
 
-        .file-upload {
+        .firewall-breach {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 2px solid #ff0000;
+            animation: firewallBreach 2s ease-in-out;
+            display: none;
+        }
+
+        .access-granted {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            font-size: 2em;
+            text-shadow: 0 0 10px #00ff00;
+            opacity: 0;
+            animation: accessGranted 2s ease-in-out;
+            display: none;
+        }
+
+        @keyframes binaryRain {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(100%); }
+        }
+
+        @keyframes firewallBreach {
+            0% { 
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes accessGranted {
+            0% { 
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 1rem;
+            z-index: 1000;
         }
 
-        .file-label {
-            padding: 0.5rem 1rem;
-            background-color: var(--secondary-color);
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.3s ease;
+        .loading-content {
+            text-align: center;
+            color: #00ff00;
         }
 
-        .file-label:hover {
-            background-color: var(--hover-color);
+        .cybercore-logo {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff00,
+                         0 0 20px #00ff00,
+                         0 0 30px #00ff00;
+            animation: glow 2s ease-in-out infinite alternate;
         }
 
-        .post-preview {
+        .loading-bar {
+            width: 300px;
+            height: 20px;
+            background-color: #111;
+            border: 1px solid #00ff00;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background-color: #00ff00;
+            animation: loading 3s ease-in-out forwards;
+        }
+
+        .loading-text {
+            color: #00ff00;
+            font-size: 1.2em;
+            margin-top: 20px;
+            animation: blink 1s infinite;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.1) 0px,
+                rgba(0, 255, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            animation: scan 8s linear infinite;
+            z-index: -1;
+        }
+
+        .terminal {
+            width: 80%;
+            max-width: 800px;
+            height: 70vh;
+            max-height: 600px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2),
+                        0 0 40px rgba(0, 255, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(5px);
             display: flex;
             flex-direction: column;
-            gap: 1rem;
         }
 
-        .post-preview img, .post-preview video {
-            max-width: 100%;
-            border-radius: 4px;
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                rgba(0, 255, 0, 0.1),
+                rgba(0, 255, 0, 0.05)
+            );
+            pointer-events: none;
         }
 
-        .posts-filters {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .btn-filter {
-            padding: 0.5rem 1rem;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-filter.active {
-            background-color: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .posts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .post {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-        }
-
-        .post-header {
+        .terminal-header {
+            background-color: rgba(26, 26, 26, 0.9);
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
         }
 
-        .post-author {
-            font-weight: 600;
-            color: var(--primary-color);
+        .terminal-title {
+            color: #00ff00;
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
-        .post-date {
-            color: var(--secondary-color);
-            font-size: 0.9rem;
-        }
-
-        .post-content {
-            margin-bottom: 1rem;
-        }
-
-        .post-media {
-            margin-bottom: 1rem;
-        }
-
-        .post-media img, .post-media video {
-            max-width: 100%;
-            border-radius: 4px;
-        }
-
-        .post-actions {
+        .terminal-controls {
             display: flex;
-            gap: 1rem;
+            gap: 8px;
         }
 
-        .post-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--secondary-color);
+        .control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #333;
+            transition: background-color 0.3s;
+        }
+
+        .control:hover {
+            background-color: #666;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff00 #000;
+        }
+
+        .terminal-body::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .terminal-body::-webkit-scrollbar-track {
+            background: #000;
+            border-left: 1px solid #00ff00;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb {
+            background-color: #00ff00;
+            border-radius: 6px;
+            border: 2px solid #000;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb:hover {
+            background-color: #00cc00;
+        }
+
+        .output {
+            margin-bottom: 20px;
+            min-height: 200px;
+            overflow-y: auto;
+        }
+
+        .line {
+            margin-bottom: 5px;
+            animation: typing 0.5s steps(40, end);
+            position: relative;
+        }
+
+        .input-line {
             display: flex;
             align-items: center;
-            gap: 4px;
-            transition: color 0.3s ease;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(0, 255, 0, 0.2);
+            position: sticky;
+            bottom: 0;
         }
 
-        .post-actions button:hover {
-            color: var(--accent-color);
+        .prompt {
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
+        #command-input {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 16px;
+            width: 100%;
+            outline: none;
+            caret-color: #00ff00;
+            padding: 5px;
+        }
+
+        #command-input::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1 }
+            50% { opacity: 0 }
+        }
+
+        @keyframes scan {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(100%); }
+        }
+
+        @keyframes loading {
+            from { width: 0% }
+            to { width: 100% }
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #00ff00,
+                             0 0 20px #00ff00,
+                             0 0 30px #00ff00;
+            }
+            to {
+                text-shadow: 0 0 20px #00ff00,
+                             0 0 30px #00ff00,
+                             0 0 40px #00ff00;
+            }
+        }
+
+        #command-input::placeholder {
+            color: #004400;
+            opacity: 0.5;
+        }
+
+        .error {
+            color: #ff0000;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+
+        .success {
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+
+        .warning {
+            color: #ffff00;
+            text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+        }
+
+        /* Mobile styles */
         @media (max-width: 768px) {
-            .profile-header {
+            .terminal {
+                width: 95%;
+                height: 80vh;
+                margin: 10px;
+            }
+
+            .language-switcher {
+                top: 10px;
+                right: 10px;
                 flex-direction: column;
-                text-align: center;
             }
 
-            .profile-stats {
-                justify-content: center;
+            .lang-btn {
+                padding: 8px 12px;
+                font-size: 14px;
             }
 
-            .profile-actions {
-                justify-content: center;
+            .terminal-header {
+                padding: 8px;
             }
 
-            .posts-container {
-                grid-template-columns: 1fr;
+            .terminal-title {
+                font-size: 12px;
+            }
+
+            .terminal-body {
+                padding: 10px;
+            }
+
+            .line {
+                font-size: 14px;
+                margin-bottom: 3px;
+            }
+
+            #command-input {
+                font-size: 14px;
+            }
+
+            .hack-animation {
+                transform: scale(0.8);
+            }
+
+            .firewall-breach {
+                width: 200px;
+                height: 200px;
+            }
+
+            .access-granted {
+                font-size: 1.5em;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) {
+            .lang-btn {
+                padding: 12px 16px;
+            }
+
+            .control {
+                width: 16px;
+                height: 16px;
+            }
+
+            #command-input {
+                font-size: 16px;
+                padding: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <i class="fas fa-building"></i>
-                <h1>Корпоративный Портал</h1>
+    <div class="matrix-bg"></div>
+    
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="cybercore-logo">CYBERCORE</div>
+            <div class="loading-bar">
+                <div class="progress"></div>
             </div>
-            <div class="auth-buttons">
-                <button id="loginBtn" class="btn-primary" onclick="showAuthForms()">
-                    <i class="fas fa-sign-in-alt"></i> Вход
-                </button>
-                <button id="registerBtn" class="btn-secondary" onclick="showRegisterForm()">
-                    <i class="fas fa-user-plus"></i> Регистрация
-                </button>
-            </div>
-        </header>
+            <div class="loading-text">Initializing system...</div>
+        </div>
+    </div>
 
-        <div class="auth-forms" style="display: none;">
-            <div class="login-form">
-                <h2>Вход в систему</h2>
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="loginUsername" placeholder="Корпоративный email" required>
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="loginPassword" placeholder="Пароль" required>
-                </div>
-                <button class="btn-primary" onclick="login()">
-                    <i class="fas fa-sign-in-alt"></i> Войти
-                </button>
-            </div>
+    <div class="hack-animation">
+        <div class="binary-rain"></div>
+        <div class="firewall-breach"></div>
+        <div class="access-granted">ACCESS GRANTED</div>
+    </div>
 
-            <div class="register-form" style="display: none;">
-                <h2>Регистрация сотрудника</h2>
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="registerUsername" placeholder="ФИО" required>
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" id="registerEmail" placeholder="Корпоративный email" required>
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="registerPassword" placeholder="Пароль" required>
-                </div>
-                <button class="btn-primary" onclick="register()">
-                    <i class="fas fa-user-plus"></i> Зарегистрироваться
-                </button>
+    <div class="language-switcher">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="ru">RU</button>
+        <button class="lang-btn" data-lang="zh">ZH</button>
+        <button class="lang-btn" data-lang="ja">JA</button>
+    </div>
+
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">CYBER TERMINAL v1.0</div>
+            <div class="terminal-controls">
+                <div class="control"></div>
+                <div class="control"></div>
+                <div class="control"></div>
             </div>
         </div>
-
-        <main class="content" style="display: none;">
-            <div class="user-profile">
-                <div class="profile-header">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <div class="profile-info">
-                        <h2>Добро пожаловать, <span id="currentUsername"></span></h2>
-                        <div class="profile-stats">
-                            <span><i class="fas fa-file-alt"></i> Документов: <span id="postCount">0</span></span>
-                            <span><i class="fas fa-thumbs-up"></i> Одобрений: <span id="likeCount">0</span></span>
-                        </div>
-                        <div class="profile-actions">
-                            <button class="btn-secondary" onclick="window.location.href='profile.html'">
-                                <i class="fas fa-user"></i> Профиль
-                            </button>
-                            <button class="btn-secondary" onclick="logout()">
-                                <i class="fas fa-sign-out-alt"></i> Выйти
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <div class="terminal-body">
+            <div id="output"></div>
+            <div class="input-line">
+                <span class="prompt">></span>
+                <input type="text" id="command-input" autocomplete="off" spellcheck="false">
             </div>
-
-            <div class="post-creation">
-                <form class="post-form" onsubmit="createPost(); return false;">
-                    <textarea id="postContent" placeholder="Опубликовать документ или сообщение..." required></textarea>
-                    <div class="file-upload">
-                        <label for="mediaInput" class="file-label">
-                            <i class="fas fa-paperclip"></i> Прикрепить файл
-                        </label>
-                        <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" onchange="handleFileSelect(event)">
-                    </div>
-                    <div id="postPreview" class="post-preview">
-                        <img id="imagePreview" style="display: none;">
-                        <video id="videoPreview" style="display: none;" controls></video>
-                        <div id="filePreview" class="file-preview" style="display: none;">
-                            <i class="fas fa-file"></i>
-                            <span id="fileName"></span>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-paper-plane"></i> Опубликовать
-                    </button>
-                </form>
-            </div>
-
-            <div class="posts-filters">
-                <button class="btn-filter active" onclick="filterPosts('all')">
-                    <i class="fas fa-list"></i> Все документы
-                </button>
-                <button class="btn-filter" onclick="filterPosts('my')">
-                    <i class="fas fa-user"></i> Мои документы
-                </button>
-            </div>
-
-            <div id="postsContainer" class="posts-container">
-                <!-- Посты будут добавляться здесь -->
-            </div>
-        </main>
+        </div>
     </div>
 
     <script>
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-        let posts = JSON.parse(localStorage.getItem('posts')) || [];
-        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        const output = document.getElementById('output');
+        const commandInput = document.getElementById('command-input');
+        const loadingScreen = document.getElementById('loading-screen');
+        const terminal = document.querySelector('.terminal');
+        const hackAnimation = document.querySelector('.hack-animation');
+        const firewallBreach = document.querySelector('.firewall-breach');
+        const accessGranted = document.querySelector('.access-granted');
 
-        function showAuthForms() {
-            const authForms = document.querySelector('.auth-forms');
-            const loginForm = document.querySelector('.login-form');
-            const registerForm = document.querySelector('.register-form');
+        // Language translations
+        const translations = {
+            en: {
+                loading: {
+                    init: 'Initializing CYBERCORE protocol...',
+                    modules: 'Loading system modules...',
+                    connection: 'Establishing secure connection...',
+                    security: 'Calibrating security protocols...',
+                    ready: 'System ready.'
+                },
+                commands: {
+                    help: 'Available commands:',
+                    clear: 'Clear the terminal',
+                    matrix: 'Start matrix effect',
+                    about: 'Show information about this terminal',
+                    exit: 'Close the terminal',
+                    scan: 'Perform system scan',
+                    hack: 'Attempt to hack the mainframe',
+                    bruteforce: 'Try to crack password',
+                    sqlmap: 'Perform SQL injection',
+                    portscan: 'Scan for open ports',
+                    exploit: 'Try to exploit vulnerabilities',
+                    bypass: 'Attempt to bypass security',
+                    ddos: 'Launch DDoS attack',
+                    phish: 'Create phishing page',
+                    backdoor: 'Install backdoor',
+                    rootkit: 'Deploy rootkit',
+                    ransom: 'Encrypt files',
+                    spy: 'Install spyware',
+                    botnet: 'Create botnet'
+                }
+            },
+            ru: {
+                loading: {
+                    init: 'Инициализация протокола CYBERCORE...',
+                    modules: 'Загрузка системных модулей...',
+                    connection: 'Установка безопасного соединения...',
+                    security: 'Калибровка протоколов безопасности...',
+                    ready: 'Система готова.'
+                },
+                commands: {
+                    help: 'Доступные команды:',
+                    clear: 'Очистить терминал',
+                    matrix: 'Запустить эффект матрицы',
+                    about: 'Показать информацию о терминале',
+                    exit: 'Закрыть терминал',
+                    scan: 'Выполнить сканирование системы',
+                    hack: 'Попытка взлома главного компьютера',
+                    bruteforce: 'Попытка подбора пароля',
+                    sqlmap: 'Выполнить SQL-инъекцию',
+                    portscan: 'Сканировать открытые порты',
+                    exploit: 'Попытка использования уязвимостей',
+                    bypass: 'Попытка обхода защиты',
+                    ddos: 'Запустить DDoS-атаку',
+                    phish: 'Создать фишинговую страницу',
+                    backdoor: 'Установить бэкдор',
+                    rootkit: 'Развернуть руткит',
+                    ransom: 'Зашифровать файлы',
+                    spy: 'Установить шпионское ПО',
+                    botnet: 'Создать ботнет'
+                }
+            },
+            zh: {
+                loading: {
+                    init: '初始化 CYBERCORE 协议...',
+                    modules: '加载系统模块...',
+                    connection: '建立安全连接...',
+                    security: '校准安全协议...',
+                    ready: '系统准备就绪。'
+                },
+                commands: {
+                    help: '可用命令:',
+                    clear: '清除终端',
+                    matrix: '启动矩阵效果',
+                    about: '显示终端信息',
+                    exit: '关闭终端',
+                    scan: '执行系统扫描',
+                    hack: '尝试入侵主系统',
+                    bruteforce: '尝试破解密码',
+                    sqlmap: '执行SQL注入',
+                    portscan: '扫描开放端口',
+                    exploit: '尝试利用漏洞',
+                    bypass: '尝试绕过安全',
+                    ddos: '发起DDoS攻击',
+                    phish: '创建钓鱼页面',
+                    backdoor: '安装后门',
+                    rootkit: '部署rootkit',
+                    ransom: '加密文件',
+                    spy: '安装间谍软件',
+                    botnet: '创建僵尸网络'
+                }
+            },
+            ja: {
+                loading: {
+                    init: 'CYBERCOREプロトコルを初期化中...',
+                    modules: 'システムモジュールをロード中...',
+                    connection: 'セキュア接続を確立中...',
+                    security: 'セキュリティプロトコルを調整中...',
+                    ready: 'システム準備完了。'
+                },
+                commands: {
+                    help: '利用可能なコマンド:',
+                    clear: 'ターミナルをクリア',
+                    matrix: 'マトリックス効果を開始',
+                    about: 'ターミナル情報を表示',
+                    exit: 'ターミナルを閉じる',
+                    scan: 'システムスキャンを実行',
+                    hack: 'メインフレームへの侵入を試行',
+                    bruteforce: 'パスワードクラックを試行',
+                    sqlmap: 'SQLインジェクションを実行',
+                    portscan: '開放ポートをスキャン',
+                    exploit: '脆弱性を悪用',
+                    bypass: 'セキュリティをバイパス',
+                    ddos: 'DDoS攻撃を開始',
+                    phish: 'フィッシングページを作成',
+                    backdoor: 'バックドアをインストール',
+                    rootkit: 'ルートキットを展開',
+                    ransom: 'ファイルを暗号化',
+                    spy: 'スパイウェアをインストール',
+                    botnet: 'ボットネットを作成'
+                }
+            }
+        };
+
+        let currentLang = 'en';
+
+        // Create audio context for sound effects
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTypingSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
             
-            authForms.style.display = 'block';
-            loginForm.style.display = 'block';
-            registerForm.style.display = 'none';
-        }
-
-        function showRegisterForm() {
-            const loginForm = document.querySelector('.login-form');
-            const registerForm = document.querySelector('.register-form');
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
             
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'block';
-        }
-
-        function showContent() {
-            const authForms = document.querySelector('.auth-forms');
-            const content = document.querySelector('.content');
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(800 + Math.random() * 400, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             
-            authForms.style.display = 'none';
-            content.style.display = 'block';
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.05);
+        }
+
+        function playSuccessSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
             
-            if (currentUser) {
-                document.getElementById('currentUsername').textContent = currentUser.username;
-                updateUserStats();
-            }
-        }
-
-        function register() {
-            const username = document.getElementById('registerUsername').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-
-            if (!username || !email || !password) {
-                alert('Пожалуйста, заполните все поля');
-                return;
-            }
-
-            if (users.some(user => user.email === email)) {
-                alert('Пользователь с таким email уже существует');
-                return;
-            }
-
-            const newUser = {
-                username,
-                email,
-                password,
-                posts: [],
-                likes: 0,
-                joinDate: new Date().toISOString()
-            };
-
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
             
-            currentUser = newUser;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             
-            showContent();
-            alert('Регистрация успешна!');
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.2);
         }
 
-        function login() {
-            const email = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            const user = users.find(u => u.email === email && u.password === password);
+        function playErrorSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
             
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                showContent();
-            } else {
-                alert('Неверный email или пароль');
-            }
-        }
-
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            location.reload();
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const preview = document.getElementById('postPreview');
-            const imagePreview = document.getElementById('imagePreview');
-            const videoPreview = document.getElementById('videoPreview');
-            const filePreview = document.getElementById('filePreview');
-            const fileName = document.getElementById('fileName');
-
-            if (file.type.startsWith('image/')) {
-                imagePreview.src = URL.createObjectURL(file);
-                imagePreview.style.display = 'block';
-                videoPreview.style.display = 'none';
-                filePreview.style.display = 'none';
-            } else if (file.type.startsWith('video/')) {
-                videoPreview.src = URL.createObjectURL(file);
-                videoPreview.style.display = 'block';
-                imagePreview.style.display = 'none';
-                filePreview.style.display = 'none';
-            } else {
-                fileName.textContent = file.name;
-                filePreview.style.display = 'flex';
-                imagePreview.style.display = 'none';
-                videoPreview.style.display = 'none';
-            }
-        }
-
-        function createPost() {
-            if (!currentUser) {
-                alert('Пожалуйста, войдите в систему');
-                return;
-            }
-
-            const content = document.getElementById('postContent').value;
-            const mediaInput = document.getElementById('mediaInput');
-            const file = mediaInput.files[0];
-
-            if (!content && !file) {
-                alert('Пожалуйста, введите текст или прикрепите файл');
-                return;
-            }
-
-            const newPost = {
-                id: Date.now(),
-                author: currentUser.username,
-                content,
-                media: file ? {
-                    name: file.name,
-                    type: file.type,
-                    url: URL.createObjectURL(file)
-                } : null,
-                likes: 0,
-                date: new Date().toISOString()
-            };
-
-            posts.push(newPost);
-            localStorage.setItem('posts', JSON.stringify(posts));
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
             
-            currentUser.posts.push(newPost.id);
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
             
-            document.getElementById('postContent').value = '';
-            mediaInput.value = '';
-            document.getElementById('postPreview').style.display = 'none';
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function playAlarmSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
             
-            displayPosts();
-            updateUserStats();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        function updateUserStats() {
-            if (!currentUser) return;
-
-            const userPosts = posts.filter(post => post.author === currentUser.username);
-            const totalLikes = userPosts.reduce((sum, post) => sum + post.likes, 0);
-
-            document.getElementById('postCount').textContent = userPosts.length;
-            document.getElementById('likeCount').textContent = totalLikes;
+        function generateRandomIP() {
+            return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
         }
 
-        function displayPosts(filter = 'all') {
-            const postsContainer = document.getElementById('postsContainer');
-            if (!postsContainer) return;
+        function generateRandomMAC() {
+            const hex = '0123456789ABCDEF';
+            let mac = '';
+            for (let i = 0; i < 6; i++) {
+                mac += hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
+                if (i < 5) mac += ':';
+            }
+            return mac;
+        }
 
-            let filteredPosts = posts;
-            if (filter === 'my' && currentUser) {
-                filteredPosts = posts.filter(post => post.author === currentUser.username);
+        function updateLoadingText(text) {
+            document.querySelector('.loading-text').textContent = text;
+        }
+
+        function showHackAnimation() {
+            hackAnimation.style.display = 'block';
+            firewallBreach.style.display = 'block';
+            accessGranted.style.display = 'block';
+            
+            setTimeout(() => {
+                firewallBreach.style.display = 'none';
+                setTimeout(() => {
+                    accessGranted.textContent = currentLang === 'en' ? 'ACCESS GRANTED' :
+                                              currentLang === 'ru' ? 'ДОСТУП РАЗРЕШЕН' :
+                                              currentLang === 'zh' ? '访问已授权' :
+                                              'アクセス許可';
+                    accessGranted.style.display = 'block';
+                    setTimeout(() => {
+                        hackAnimation.style.display = 'none';
+                        firewallBreach.style.display = 'none';
+                        accessGranted.style.display = 'none';
+                    }, 2000);
+                }, 2000);
+            }, 1000);
+        }
+
+        function initializeSystem() {
+            const steps = [
+                { text: translations[currentLang].loading.init, delay: 1000 },
+                { text: translations[currentLang].loading.modules, delay: 1500 },
+                { text: translations[currentLang].loading.connection, delay: 2000 },
+                { text: translations[currentLang].loading.security, delay: 1500 },
+                { text: translations[currentLang].loading.ready, delay: 1000 }
+            ];
+
+            let currentStep = 0;
+            
+            function processNextStep() {
+                if (currentStep < steps.length) {
+                    updateLoadingText(steps[currentStep].text);
+                    setTimeout(() => {
+                        currentStep++;
+                        processNextStep();
+                    }, steps[currentStep].delay);
+                } else {
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            terminal.style.display = 'block';
+                            setTimeout(() => {
+                                terminal.style.opacity = '1';
+                                commands.help();
+                            }, 500);
+                        }, 500);
+                    }, 1000);
+                }
             }
 
-            postsContainer.innerHTML = filteredPosts.map(post => `
-                <div class="post">
-                    <div class="post-header">
-                        <span class="post-author">${post.author}</span>
-                        <span class="post-date">${new Date(post.date).toLocaleString()}</span>
-                    </div>
-                    <div class="post-content">${post.content}</div>
-                    ${post.media ? `
-                        <div class="post-media">
-                            ${post.media.type.startsWith('image/') ? 
-                                `<img src="${post.media.url}" alt="${post.media.name}">` :
-                            post.media.type.startsWith('video/') ?
-                                `<video src="${post.media.url}" controls></video>` :
-                                `<div class="file-preview">
-                                    <i class="fas fa-file"></i>
-                                    <span>${post.media.name}</span>
-                                </div>`
-                            }
-                        </div>
-                    ` : ''}
-                    <div class="post-actions">
-                        <button onclick="likePost(${post.id})">
-                            <i class="fas fa-thumbs-up"></i> ${post.likes}
-                        </button>
-                        ${post.author === currentUser?.username ? `
-                            <button onclick="deletePost(${post.id})">
-                                <i class="fas fa-trash"></i> Удалить
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+            processNextStep();
         }
 
-        function likePost(postId) {
-            if (!currentUser) {
-                alert('Пожалуйста, войдите в систему');
-                return;
+        const commands = {
+            help: () => {
+                addLine(translations[currentLang].commands.help);
+                Object.keys(translations[currentLang].commands).forEach(cmd => {
+                    if (cmd !== 'help') {
+                        addLine(`${cmd} - ${translations[currentLang].commands[cmd]}`);
+                    }
+                });
+            },
+            clear: () => {
+                output.innerHTML = '';
+            },
+            matrix: () => {
+                addLine('> Initializing matrix protocol...');
+                document.body.style.background = 'linear-gradient(0deg, #000, #0a0a0a)';
+                setTimeout(() => {
+                    document.body.style.background = '#0a0a0a';
+                    addLine('> Matrix protocol terminated.');
+                }, 3000);
+            },
+            about: () => {
+                addLine('> CYBER TERMINAL v1.0');
+                addLine('> Created with HTML, CSS, and JavaScript');
+                addLine('> Theme: Cyberpunk/Hacking');
+                addLine('> Status: Operational');
+            },
+            scan: () => {
+                addLine('> Initiating system scan...');
+                addLine('> Scanning ports...');
+                addLine('> Analyzing network traffic...');
+                addLine('> Detecting vulnerabilities...');
+                addLine('> Scan complete. System secure.');
+            },
+            hack: () => {
+                addLine('> Attempting to access mainframe...');
+                addLine('> Bypassing security protocols...');
+                addLine('> Decrypting access codes...');
+                showHackAnimation();
+                setTimeout(() => {
+                    addLine('> Access granted!');
+                    playSuccessSound();
+                }, 3000);
+            },
+            bruteforce: () => {
+                addLine('> Starting brute force attack...');
+                addLine('> Loading password dictionary...');
+                addLine('> Attempting combinations...');
+                setTimeout(() => {
+                    addLine('> Password found: ********');
+                    addLine('> Access granted!');
+                    playSuccessSound();
+                }, 2000);
+            },
+            sqlmap: () => {
+                addLine('> Initializing SQL injection...');
+                addLine('> Testing for vulnerabilities...');
+                addLine('> Injecting payload...');
+                addLine('> Bypassing WAF...');
+                addLine('> Success! Database accessed.');
+                playSuccessSound();
+            },
+            portscan: () => {
+                addLine('> Starting port scan...');
+                addLine('> Scanning ports 1-1024...');
+                addLine('> Found open ports:');
+                addLine('> 22 (SSH)');
+                addLine('> 80 (HTTP)');
+                addLine('> 443 (HTTPS)');
+                addLine('> 3306 (MySQL)');
+                addLine('> Scan complete.');
+            },
+            exploit: () => {
+                addLine('> Searching for exploits...');
+                addLine('> Found potential vulnerability: CVE-2023-1234');
+                addLine('> Loading exploit module...');
+                addLine('> Executing payload...');
+                addLine('> Shell access obtained!');
+                playSuccessSound();
+            },
+            bypass: () => {
+                addLine('> Analyzing security measures...');
+                addLine('> Detecting firewall rules...');
+                addLine('> Crafting bypass payload...');
+                addLine('> Attempting to bypass...');
+                addLine('> Success! Security bypassed.');
+                playSuccessSound();
+            },
+            ddos: () => {
+                addLine('> Initializing DDoS attack...');
+                addLine('> Connecting to botnet...');
+                addLine('> Target IP: ' + generateRandomIP());
+                addLine('> Launching attack vectors...');
+                addLine('> Attack in progress...');
+                setTimeout(() => {
+                    addLine('> Target is down!');
+                    playSuccessSound();
+                }, 3000);
+            },
+            phish: () => {
+                addLine('> Creating phishing page...');
+                addLine('> Cloning target website...');
+                addLine('> Injecting malicious code...');
+                addLine('> Setting up server...');
+                addLine('> Phishing page ready at: http://' + generateRandomIP());
+                playSuccessSound();
+            },
+            backdoor: () => {
+                addLine('> Installing backdoor...');
+                addLine('> Compiling payload...');
+                addLine('> Bypassing antivirus...');
+                addLine('> Establishing persistence...');
+                addLine('> Backdoor installed successfully!');
+                playSuccessSound();
+            },
+            rootkit: () => {
+                addLine('> Deploying rootkit...');
+                addLine('> Gaining kernel access...');
+                addLine('> Installing hooks...');
+                addLine('> Hiding processes...');
+                addLine('> Rootkit deployed! System compromised.');
+                playSuccessSound();
+            },
+            ransom: () => {
+                addLine('> Initializing ransomware...');
+                addLine('> Encrypting files...');
+                addLine('> Generating encryption key...');
+                addLine('> Creating ransom note...');
+                addLine('> Files encrypted! Payment required.');
+                playAlarmSound();
+            },
+            spy: () => {
+                addLine('> Installing spyware...');
+                addLine('> Capturing keystrokes...');
+                addLine('> Accessing webcam...');
+                addLine('> Monitoring network traffic...');
+                addLine('> Spyware active!');
+                playSuccessSound();
+            },
+            botnet: () => {
+                addLine('> Building botnet...');
+                addLine('> Scanning for vulnerable devices...');
+                addLine('> Infecting targets...');
+                addLine('> Establishing C&C server...');
+                addLine('> Botnet ready! Connected devices: ' + Math.floor(Math.random() * 1000));
+                playSuccessSound();
+            },
+            exit: () => {
+                addLine('> Shutting down system...');
+                setTimeout(() => {
+                    window.close();
+                }, 1000);
             }
+        };
 
-            const post = posts.find(p => p.id === postId);
-            if (post) {
-                post.likes++;
-                localStorage.setItem('posts', JSON.stringify(posts));
-                displayPosts();
+        function addLine(text) {
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.textContent = text;
+            output.appendChild(line);
+            
+            // Прокрутка к последней строке
+            const terminalBody = document.querySelector('.terminal-body');
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+            
+            playTypingSound();
+        }
+
+        // Добавляем поддержку сенсорных устройств
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        document.querySelector('.terminal-body').addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.querySelector('.terminal-body').addEventListener('touchmove', (e) => {
+            touchEndY = e.touches[0].clientY;
+            e.preventDefault();
+        });
+
+        // Оптимизация для мобильных устройств
+        function optimizeForMobile() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                // Увеличиваем размер кнопок для удобства нажатия
+                document.querySelectorAll('.lang-btn').forEach(btn => {
+                    btn.style.padding = '12px 16px';
+                    btn.style.fontSize = '16px';
+                });
+                
+                // Увеличиваем размер поля ввода
+                const input = document.getElementById('command-input');
+                input.style.fontSize = '16px';
+                input.style.padding = '8px';
+                
+                // Добавляем виртуальную клавиатуру
+                input.setAttribute('inputmode', 'text');
             }
         }
 
-        function deletePost(postId) {
-            if (!currentUser) return;
+        // Add typing sound when user types
+        commandInput.addEventListener('input', () => {
+            playTypingSound();
+        });
 
-            const postIndex = posts.findIndex(p => p.id === postId);
-            if (postIndex !== -1 && posts[postIndex].author === currentUser.username) {
-                posts.splice(postIndex, 1);
-                localStorage.setItem('posts', JSON.stringify(posts));
-                displayPosts();
-                updateUserStats();
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = commandInput.value.toLowerCase().trim();
+                addLine(`> ${command}`);
+                
+                if (commands[command]) {
+                    commands[command]();
+                } else {
+                    addLine('> Command not found. Type "help" for available commands.');
+                    playErrorSound();
+                }
+                
+                commandInput.value = '';
             }
-        }
+        });
 
-        function filterPosts(filter) {
-            const buttons = document.querySelectorAll('.btn-filter');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            displayPosts(filter);
-        }
+        // Language switcher
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentLang = btn.dataset.lang;
+                output.innerHTML = '';
+                commands.help();
+            });
+        });
 
-        // Инициализация при загрузке страницы
-        if (currentUser) {
-            showContent();
-        }
+        // Инициализация при загрузке
+        window.addEventListener('load', () => {
+            initializeSystem();
+            optimizeForMobile();
+        });
     </script>
 </body>
 </html> 
