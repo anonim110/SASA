@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
     id: socket.id,
     x: (Math.random() - 0.5) * 800,
     y: (Math.random() - 0.5) * 800,
-    angle: 0,
+    angle: Math.PI / 2, // Начинаем лицом вперед
     hp: 100,
     color: Math.random() * 0xffffff,
     score: 0
@@ -46,6 +46,7 @@ io.on('connection', (socket) => {
 
   socket.on('input', (data) => {
     const p = PLAYERS[socket.id];
+    // ВАЖНО: Если игрок не существует или мертв, игнорируем ввод
     if (!p || p.hp <= 0) return;
 
     p.angle = data.angle;
@@ -55,7 +56,8 @@ io.on('connection', (socket) => {
     let ny = p.y; 
     let forwardAngle = p.angle;
 
-    // Переводим WASD в вектор движения относительно угла игрока
+    // --- БЛОК ДВИЖЕНИЯ WASD (Корректен для FPS) ---
+    // Движение рассчитывается относительно угла, куда смотрит игрок (forwardAngle)
     if (data.w) { // Вперед
         nx += Math.cos(forwardAngle) * speed;
         ny += Math.sin(forwardAngle) * speed;
@@ -72,6 +74,7 @@ io.on('connection', (socket) => {
         nx += Math.cos(forwardAngle + Math.PI / 2) * speed;
         ny += Math.sin(forwardAngle + Math.PI / 2) * speed;
     }
+    // --- КОНЕЦ БЛОКА ДВИЖЕНИЯ WASD ---
 
     // Простая коллизия со стенами
     let collide = false;
