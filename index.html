@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEON BATTLE</title>
+    <style>
+        body { margin: 0; background: #050505; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; }
+        h1 { margin: 0; color: #0ff; text-shadow: 0 0 10px #0ff; }
+        #score { font-size: 20px; }
+        #leaderboard { position: absolute; top: 10px; right: 10px; color: #fff; text-align: right; pointer-events: none;}
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h1>NEON BATTLE</h1>
+        <div id="hp-bar" style="width: 200px; height: 20px; background: #333; margin-top: 5px; border: 2px solid #fff;">
+            <div id="hp-fill" style="width: 100%; height: 100%; background: #0f0; transition: width 0.1s;"></div>
+        </div>
+    </div>
+    <div id="leaderboard"></div>
+    <canvas id="game"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let me = { id: null, x: 0, y: 0 };
+        let obstacles = [];
+        let mapSize = 2000;
+        let keys = { w: false, a: false, s: false, d: false };
+        let mouse = { x: 0, y: 0 };
+
+        socket.on('mapData', (data) => {
+            obstacles = data.obstacles;
+            mapSize = data.mapSize;
+            me.id = data.myId;
+        });
+
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mousedown', () => socket.emit('shoot'));
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        // Отправка управления
+        setInterval(() => {
+            if (!me.id) return;
+            const angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
+            socket.emit('input', { w: keys.w, s: keys.s, a: keys.a, d: keys.d, angle: angle });
+        }, 1000 / 60);
+
+        socket.on('state', (state) => {
+            // Очистка
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Поиск себя
+            const myPlayer = state.players[me.id];
+            let camX = 0, camY = 0;
+            
+            if (myPlayer) {
+                camX = canvas.width/2 - myPlayer.x;
+                camY = canvas.height/2 - myPlayer.y;
+                // Обновляем UI
+                document.getElementById('hp-fill').style.width = myPlayer.hp + '%';
+            }
+
+            ctx.save();
+            ctx.translate(camX, camY);
+
+            // Рисуем границы карты
+            ctx.strokeStyle = '#ff0055';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(0, 0, mapSize, mapSize);
+
+            // Сетка на полу
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let x=0; x<=mapSize; x+=100) { ctx.moveTo(x,0); ctx.lineTo(x,mapSize); }
+            for(let y=0; y<=mapSize; y+=100) { ctx.moveTo(0,y); ctx.lineTo(mapSize,y); }
+            ctx.stroke();
+
+            // Стены
+            ctx.fillStyle = '#222';
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#0ff';
+            for (let o of obstacles) {
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+                ctx.strokeRect(o.x, o.y, o.w, o.h);
+            }
+            ctx.shadowBlur = 0;
+
+            // Пули
+            ctx.fillStyle = '#ff0';
+            for (let b of state.bullets) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            // Игроки
+            let leaders = [];
+            for (let id in state.players) {
+                let p = state.players[id];
+                leaders.push(`${p.score} pts`);
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+                
+                // Тело
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, 22, 0, Math.PI*2);
+                ctx.fill();
+
+                // Пушка
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(10, -5, 25, 10);
+
+                ctx.restore();
+            }
+            ctx.restore();
+            
+            document.getElementById('leaderboard').innerHTML = leaders.join('<br>');
+        });
+    </script>
+</body>
+</html>
