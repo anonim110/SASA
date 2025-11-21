@@ -5,7 +5,7 @@
     <style>
         body { margin: 0; background: #0a0a0a; overflow: hidden; font-family: sans-serif; cursor: crosshair; }
         canvas { display: block; }
-        #ui { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; }
         .bar { width: 200px; height: 15px; background: #333; margin-bottom: 5px; border: 1px solid #fff; }
         .fill { height: 100%; transition: width 0.1s; }
         #hp-fill { background: #f04; }
@@ -20,13 +20,11 @@
         <div id="w-info">1: Rifle | 2: Shotgun | 3: Sniper</div>
     </div>
     <canvas id="game"></canvas>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -38,95 +36,155 @@
         let mapSize = 2000;
         let cam = { x: 0, y: 0 };
 
-        let keys = { w: false, a: false, s: false, d: false, dash: false };
-        let mouse = { x: 0, y: 0 };
+        // Поддержка русской и английской раскладки
+        const keys = {
+            forward: false,  // W или Ц
+            left: false,     // A или Ф
+            backward: false, // S или Ы
+            right: false,    // D или В
+            dash: false
+        };
 
-        socket.on('init', (data) => {
-            obstacles = data.obstacles;
-            mapSize = data.mapSize;
-            me.id = data.myId;
-        });
+        const keyMap = {
+            // Английская
+            'KeyW': 'forward',
+            'KeyA': 'left',
+            'KeyS': 'backward',
+            'KeyD': 'right',
+            // Русская
+            'KeyC': 'forward',  // Ц
+            'KeyA': 'left',     // Ф (A уже есть)
+            'KeyY': 'backward', // Ы (латинская Y)
+            'KeyD': 'right'     // В (латинская D уже есть, но работает)
+        };
 
-        // Управление
         window.addEventListener('keydown', e => {
-            if(e.key === 'w') keys.w = true;
-            if(e.key === 'a') keys.a = true;
-            if(e.key === 's') keys.s = true;
-            if(e.key === 'd') keys.d = true;
-            if(e.code === 'Space') keys.dash = true;
-            if(['1','2','3'].includes(e.key)) socket.emit('changeWeapon', e.key);
+            const action = keyMap[e.code];
+            if (action) {
+                keys[action] = true;
+                e.preventDefault();
+            }
+            if (e.code === 'Space') {
+                keys.dash = true;
+                e.preventDefault();
+            }
+            if (['Digit1','Digit2','Digit3'].includes(e.code)) {
+                socket.emit('changeWeapon', e.key);
+            }
         });
 
         window.addEventListener('keyup', e => {
-            if(e.key === 'w') keys.w = false;
-            if(e.key === 'a') keys.a = false;
-            if(e.key === 's') keys.s = false;
-            if(e.key === 'd') keys.d = false;
-            if(e.code === 'Space') keys.dash = false;
+            const action = keyMap[e.code];
+            if (action) keys[action] = false;
+            if (e.code === 'Space') keys.dash = false;
         });
 
+        let mouse = { x: 0, y: 0 };
         window.addEventListener('mousemove', e => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
         });
 
-        window.addEventListener('mousedown', () => socket.emit('shoot'));
+        window.addEventListener('mousedown', e => {
+            if (e.button === 0) socket.emit('shoot');
+        });
 
-        // Отправка данных
+        // Отправка ввода 60 раз в секунду
         setInterval(() => {
             if (!me.id) return;
             const angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
-            socket.emit('input', { ...keys, angle });
-        }, 1000 / 60);
+            socket.emit('input', {
+                forward: keys.forward,
+                left: keys.left,
+                backward: keys.backward,
+                right: keys.right,
+                dash: keys.dash,
+                angle
+            });
+        }, 1000/60);
 
-        // Отрисовка
+        socket.on('init', (data) => {
+            obstacles = data.obstacles;
+            mapSize = data.mapSize || 2000;
+            me.id = data.myId;
+        });
+
         socket.on('state', (state) => {
             players = state.players;
-            bullets = state.bullets;
-            orbs = state.orbs;
+            bullets = state.bullets || [];
+            orbs = state.orbs || [];
 
             const myPlayer = players[me.id];
             if (myPlayer) {
                 cam.x = canvas.width/2 - myPlayer.x;
                 cam.y = canvas.height/2 - myPlayer.y;
-                document.getElementById('hp-fill').style.width = myPlayer.hp + '%';
-                document.getElementById('stamina-fill').style.width = myPlayer.stamina + '%';
+                document.getElementById('hp-fill').style.width = Math.max(0, myPlayer.hp) + '%';
+                document.getElementById('stamina-fill').style.width = Math.max(0, myPlayer.stamina) + '%';
             }
 
-            ctx.fillStyle = '#111';
+            // Фон
+            ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
             ctx.translate(cam.x, cam.y);
 
-            // Карта
+            // Граница карты
             ctx.strokeStyle = '#333';
-            ctx.strokeRect(0,0,mapSize,mapSize);
-            
-            // Аптечки
-            ctx.fillStyle = '#0f0';
-            for(let o of orbs) { ctx.beginPath(); ctx.arc(o.x, o.y, 8, 0, 7); ctx.fill(); }
+            ctx.lineWidth = 4;
+            ctx.strokeRect(0, 0, mapSize, mapSize);
 
-            // Стены
-            ctx.fillStyle = '#222'; ctx.strokeStyle = '#555';
-            for(let o of obstacles) { ctx.fillRect(o.x, o.y, o.w, o.h); ctx.strokeRect(o.x, o.y, o.w, o.h); }
+            // Аптечки (orbs)
+            ctx.fillStyle = '#0f8';
+            for (let o of orbs) {
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Препятствия
+            ctx.fillStyle = '#222';
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+            for (let o of obstacles) {
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+                ctx.strokeRect(o.x, o.y, o.w, o.h);
+            }
 
             // Пули
             ctx.fillStyle = '#ff0';
-            for(let b of bullets) { ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, 7); ctx.fill(); }
+            for (let b of bullets) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
             // Игроки
-            for(let id in players) {
+            for (let id in players) {
                 let p = players[id];
                 ctx.save();
                 ctx.translate(p.x, p.y);
-                ctx.rotate(p.angle);
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(0,0,20,0,7); ctx.fill();
-                ctx.fillStyle = '#fff'; ctx.fillRect(10, -5, 25, 10); // Оружие
+                ctx.rotate(p.angle + Math.PI/2);
+
+                // Тело
+                ctx.fillStyle = p.color || '#f0f';
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Оружие
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, -6, 35, 12);
+
                 ctx.restore();
             }
+
             ctx.restore();
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         });
     </script>
 </body>
