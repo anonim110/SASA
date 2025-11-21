@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D FPS NEON SHOOTER — STABLE EDITION</title>
+    <title>3D TOP-DOWN NEON SHOOTER — STABLE</title>
     <style>
         body { margin:0; overflow:hidden; background:#000; cursor:none; }
         #ui { position:absolute; top:10px; left:10px; color:#0ff; font-weight:bold; pointer-events:none; z-index:10; text-shadow:0 0 10px #000; }
-        #crosshair { position:absolute; top:50%; left:50%; width:30px; height:30px; border:2px solid #0f0; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 15px #0f0; pointer-events:none; z-index:10; }
-        #crosshair::before { content:''; position:absolute; top:50%; left:50%; width:4px; height:20px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
-        #crosshair::after { content:''; position:absolute; top:50%; left:50%; width:20px; height:4px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
+        #crosshair { position:absolute; top:50%; left:50%; width:26px; height:26px; border:2px solid #0f0; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 15px #0f0; pointer-events:none; z-index:10; }
+        #crosshair::before { content:''; position:absolute; top:50%; left:50%; width:4px; height:16px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
+        #crosshair::after { content:''; position:absolute; top:50%; left:50%; width:16px; height:4px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
         #instruction { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:30px; border:2px solid #0ff; border-radius:10px; color:#0ff; font-size:24px; z-index:10; box-shadow:0 0 30px #0ff; }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.154.0/build/three.module.js" } }</script>
 </head>
 <body>
-    <div id="ui">WASD — движение | Мышь — прицел/стрельба<br>HP: <span id="hp">100</span> | Убийств: <span id="score">0</span></div>
+    <div id="ui">WASD — движение | Мышь — поворот и стрельба<br>HP: <span id="hp">100</span> | Убийств: <span id="score">0</span></div>
     <div id="crosshair"></div>
     <div id="instruction">КЛИК ДЛЯ ЗАХВАТА КУРСОРА</div>
 
@@ -26,9 +26,9 @@
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.FogExp2(0x050510, 0.0012);
+        scene.fog = new THREE.FogExp2(0x050510, 0.0008);
 
-        const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 3000);
+        const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 5000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(innerWidth, innerHeight);
         renderer.shadowMap.enabled = true;
@@ -36,28 +36,28 @@
         document.body.appendChild(renderer.domElement);
 
         // Освещение
-        scene.add(new THREE.AmbientLight(0x404060, 1.2));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(500, 800, 600);
+        scene.add(new THREE.AmbientLight(0x404060, 1.5));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        dirLight.position.set(500, 1000, 600);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.set(2048, 2048);
         scene.add(dirLight);
 
-        const playerLight = new THREE.PointLight(0xffaa77, 7, 300);
+        const playerLight = new THREE.PointLight(0xffaa77, 8, 400);
         playerLight.castShadow = true;
         scene.add(playerLight);
 
         // Пол
         const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(4000, 4000),
+            new THREE.PlaneGeometry(5000, 5000),
             new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.95 })
         );
         plane.rotation.x = -Math.PI / 2;
         plane.receiveShadow = true;
         scene.add(plane);
-        scene.add(new THREE.GridHelper(4000, 100, 0x00ffff, 0x002233));
+        scene.add(new THREE.GridHelper(5000, 100, 0x00ffff, 0x002233));
 
-        // === INPUT (стабильный, без зависимости от раскладки) ===
+        // === INPUT ===
         const move = { forward: false, left: false, backward: false, right: false };
         const keyMap = { KeyW: 'forward', KeyA: 'left', KeyS: 'backward', KeyD: 'right', KeyЦ: 'forward', KeyФ: 'left', KeyЫ: 'backward', KeyВ: 'right' };
 
@@ -65,7 +65,7 @@
         document.addEventListener('keyup', e => { if (keyMap[e.code]) move[keyMap[e.code]] = false; });
 
         let yaw = 0;
-        const SENSITIVITY = 0.0017;
+        const SENSITIVITY = 0.0009; // замедлено в 2 раза
 
         const instruction = document.getElementById('instruction');
         renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
@@ -73,90 +73,67 @@
         document.addEventListener('mousemove', e => { if (document.pointerLockElement) yaw -= e.movementX * SENSITIVITY; });
         document.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement) socket.emit('shoot'); });
 
-        // === CLIENT-SIDE PREDICTION + RECONCILIATION ===
+        // === CLIENT PREDICTION ===
         let myId = null;
-        let serverStateBuffer = [];
-        let lastServerStateTime = 0;
+        const localPlayer = { x: 0, y: 0, angle: 0, hp: 100, score: 0 };
         let pendingInputs = [];
 
-        const localPlayer = { x: 0, y: 0, angle: 0, hp: 100, score: 0 }; // наша предиктивная копия
-
-        // === МЕШИ ===
         const playerMeshes = {};
         const bulletPool = [];
         const activeBullets = [];
 
         function getBullet() {
             if (bulletPool.length) return bulletPool.pop();
-            const mesh = new THREE.Mesh(
-                new THREE.SphereGeometry(4, 8, 8),
-                new THREE.MeshBasicMaterial({ color: 0xffff00 })
-            );
-            return mesh;
+            return new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
         }
 
         function createPlayerMesh(color) {
             const g = new THREE.Group();
             const body = new THREE.Mesh(new THREE.CylinderGeometry(11, 13, 36, 16), new THREE.MeshStandardMaterial({ color }));
             body.position.y = 18; body.castShadow = true; g.add(body);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(9, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffddaa }));
+            const head = new THREE.Mesh(new THREE.SphereGeometry(9, Gobierno 16, 16), new THREE.MeshStandardMaterial({ color: 0xffddaa }));
             head.position.y = 42; g.add(head);
-            const gun = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 30), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+            const gun = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 32), new THREE.MeshStandardMaterial({ color: 0x222222 }));
             gun.position.set(14, 22, 10); g.add(gun);
             return g;
         }
 
-        // === СОКЕТ ===
         socket.on('init', data => {
             myId = data.myId;
             localPlayer.x = data.x || 0;
             localPlayer.y = data.y || 0;
+
             data.obstacles.forEach(o => {
                 const box = new THREE.Mesh(
-                    new THREE.BoxGeometry(o.w, 100, o.h),
-                    new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x004488 })
+                    new THREE.BoxGeometry(o.w, 120, o.h),
+                    new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x0044aa })
                 );
-                box.position.set(o.x, 50, o.y);
+                box.position.set(o.x, 60, o.y);
                 box.castShadow = true; box.receiveShadow = true;
                 scene.add(box);
             });
         });
 
-        socket.on('state', state => {
-            if (!myId) return;
-            serverStateBuffer.push({ time: performance.now(), state });
-            lastServerStateTime = state.time || performance.now();
-
-            // Reconciliation
-            const myServerPlayer = state.players[myId];
-            if (myServerPlayer) {
-                const dx = myServerPlayer.x - localPlayer.x;
-                const dz = myServerPlayer.y - localPlayer.y;
-                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
-                    localPlayer.x = myServerPlayer.x;
-                    localPlayer.y = myServerPlayer.y;
-                    // Переигрываем все pending inputs
-                    pendingInputs.forEach(input => applyInput(input, localPlayer, 1 / 60));
-                }
-                localPlayer.hp = myServerPlayer.hp;
-                localPlayer.score = myServerPlayer.score || 0;
-                document.getElementById('hp').innerText = Math.max(0, Math.ceil(localPlayer.hp));
-                document.getElementById('score').innerText = localPlayer.score;
-            }
-        });
-
         function applyInput(input, player, dt) {
-            const speed = 300 * dt;
+            const speed = 120 * dt; // скорость уменьшена в 2.5 раза (было ~300)
             const dir = new THREE.Vector2(
                 (input.right ? 1 : 0) - (input.left ? 1 : 0),
                 (input.backward ? 1 : 0) - (input.forward ? 1 : 0)
-            );
-            if (dir.lengthSq() > 0) dir.normalize();
+            ).normalizeOrZero();
             const forward = new THREE.Vector3(Math.sin(input.angle), 0, Math.cos(input.angle));
             const right = new THREE.Vector3(Math.cos(input.angle), 0, -Math.sin(input.angle));
             player.x += (forward.x * -dir.y + right.x * dir.x) * speed;
             player.y += (forward.z * -dir.y + right.z * dir.x) * speed;
+            player.angle = input.angle;
         }
+
+        // === TOP-DOWN КАМЕРА (сверху вниз) ===
+        const CAMERA_HEIGHT = 600;   // высота камеры
+        const CAMERA_DISTANCE = 300; // расстояние сзади игрока
+        const CAMERA_LERP = 0.08;    // плавность следования
+
+        let cameraTarget = new THREE.Vector3();
+        let cameraOffset = new THREE.Vector3();
 
         // === ТИК 60 FPS ===
         let lastTick = performance.now();
@@ -166,52 +143,74 @@
             lastTick = now;
 
             if (myId) {
-                const input = { ...move, angle: yaw, seq: pendingInputs.length };
+                const input = { ...move, angle: yaw };
                 socket.emit('input', input);
                 applyInput(input, localPlayer, dt);
                 pendingInputs.push(input);
 
-                camera.position.set(localPlayer.x, 55, localPlayer.y);
-                camera.rotation.y = yaw;
-                playerLight.position.set(localPlayer.x, 60, localPlayer.y);
-            }
+                // === КАМЕРА СВЕРХУ-ВНИЗ СЛЕДИТ ЗА ИГРОКОМ ===
+                const targetX = localPlayer.x;
+                const targetZ = localPlayer.y;
 
-            // Интерполяция/экстраполяция других игроков
-            const renderTime = performance.now() - 100; // 100 мс лаг компенсация
-            serverStateBuffer = serverStateBuffer.filter(s => s.time > performance.now() - 500);
+                // Позиция камеры сзади и сверху
+                const backOffset = new THREE.Vector3(
+                    Math.sin(yaw) * CAMERA_DISTANCE,
+                    0,
+                    Math.cos(yaw) * CAMERA_DISTANCE
+                );
 
-            const latestState = serverStateBuffer[serverStateBuffer.length - 1]?.state;
-            if (latestState) {
-                Object.entries(latestState.players).forEach(([id, p]) => {
-                    if (id === myId) return;
-                    if (!playerMeshes[id]) {
-                        playerMeshes[id] = createPlayerMesh(p.color || 0xff00ff);
-                        scene.add(playerMeshes[id]);
-                    }
-                    const mesh = playerMeshes[id];
-                    mesh.position.set(p.x, 0, p.y);
-                    mesh.rotation.y = p.angle;
-                    mesh.visible = true;
-                });
-            }
+                cameraTarget.set(targetX + backOffset.x, targetZ + backOffset.z, 0);
+                camera.position.lerp(new THREE.Vector3(cameraTarget.x, CAMERA_HEIGHT, cameraTarget.y), CAMERA_LERP);
+                camera.lookAt(targetX, 0, targetZ);
 
-            // Пули (из последнего состояния)
-            if (latestState) {
-                activeBullets.forEach(m => { scene.remove(m); bulletPool.push(m); });
-                activeBullets.length = 0;
-                latestState.bullets.forEach(b => {
-                    const mesh = getBullet();
-                    mesh.position.set(b.x, 40, b.y);
-                    scene.add(mesh);
-                    activeBullets.push(mesh);
-                });
+                playerLight.position.set(localPlayer.x, 80, localPlayer.y);
+
+                document.getElementById('hp').innerText = Math.max(0, Math.ceil(localPlayer.hp));
+                document.getElementById('score').innerText = localPlayer.score;
             }
 
             requestAnimationFrame(tick);
         }
         tick();
 
-        // Рендер
+        // === СОСТОЯНИЕ С СЕРВЕРА ===
+        socket.on('state', state => {
+            if (!myId) return;
+
+            const myServer = state.players[myId];
+            if (myServer) {
+                // reconciliation
+                if (Math.hypot(myServer.x - localPlayer.x, myServer.y - localPlayer.y) > 5) {
+                    localPlayer.x = myServer.x;
+                    localPlayer.y = myServer.y;
+                }
+                localPlayer.hp = myServer.hp;
+                localPlayer.score = myServer.score || 0;
+            }
+
+            // Другие игроки
+            Object.entries(state.players).forEach(([id, p]) => {
+                if (id === myId) return;
+                if (!playerMeshes[id]) {
+                    playerMeshes[id] = createPlayerMesh(p.color || 0xff00ff);
+                    scene.add(playerMeshes[id]);
+                }
+                const mesh = playerMeshes[id];
+                mesh.position.set(p.x, 0, p.y);
+                mesh.rotation.y = p.angle;
+            });
+
+            // Пули
+            activeBullets.forEach(m => { scene.remove(m); bulletPool.push(m); });
+            activeBullets.length = 0;
+            state.bullets?.forEach(b => {
+                const mesh = getBullet();
+                mesh.position.set(b.x, 40, b.y);
+                scene.add(mesh);
+                activeBullets.push(mesh);
+            });
+        });
+
         function animate() {
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
@@ -223,6 +222,13 @@
             camera.updateProjectionMatrix();
             renderer.setSize(innerWidth, innerHeight);
         });
+
+        // Вспомогательная функция
+        THREE.Vector2.prototype.normalizeOrZero = function() {
+            const len = this.length();
+            if (len > 0) this.multiplyScalar(1 / len);
+            return this;
+        };
     </script>
 </body>
 </html>
