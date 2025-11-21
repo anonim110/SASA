@@ -1,141 +1,234 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D NEON SHOOTER</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        #ui { position: absolute; top: 10px; left: 10px; color: #0ff; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 0 0 5px #000; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; background: transparent; border: 2px solid #0f0; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
+    </style>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      { "imports": { "three": "https://unpkg.com/three@0.154.0/build/three.module.js" } }
+    </script>
+</head>
+<body>
+    <div id="ui">
+        WASD - Move | MOUSE - Aim/Shoot<br>
+        HP: <span id="hp">100</span> | Kills: <span id="score">0</span>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+        import * as THREE from 'three';
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+        const socket = io();
 
-const PORT = process.env.PORT || 3000;
+        // --- 1. СЦЕНА THREE.JS ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050510); // Темно-синий фон
+        scene.fog = new THREE.Fog(0x050510, 500, 1500);
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        // Камера смотрит сверху под углом (изометрия)
+        camera.position.set(0, 400, 300);
+        camera.lookAt(0, 0, 0);
 
-// --- НАСТРОЙКИ ---
-const MAP_SIZE = 1000; // Размер поля
-const OBSTACLES = [];
-const PLAYERS = {};
-const BULLETS = [];
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // Включаем тени
+        document.body.appendChild(renderer.domElement);
 
-// Генерируем кубы-стены
-for (let i = 0; i < 15; i++) {
-    OBSTACLES.push({
-        x: (Math.random() - 0.5) * MAP_SIZE,
-        y: (Math.random() - 0.5) * MAP_SIZE, // В 3D это будет Z
-        w: 50 + Math.random() * 100,
-        h: 50 + Math.random() * 100
-    });
-}
+        // --- 2. ОСВЕЩЕНИЕ ---
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5); // Мягкий свет
+        scene.add(ambientLight);
 
-io.on('connection', (socket) => {
-  console.log('3D Player connected:', socket.id);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(200, 500, 300);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 500;
+        dirLight.shadow.camera.bottom = -500;
+        dirLight.shadow.camera.left = -500;
+        dirLight.shadow.camera.right = 500;
+        scene.add(dirLight);
 
-  PLAYERS[socket.id] = {
-    id: socket.id,
-    x: (Math.random() - 0.5) * 800,
-    y: (Math.random() - 0.5) * 800,
-    angle: 0,
-    hp: 100,
-    color: Math.random() * 0xffffff, // Случайный цвет HEX
-    score: 0
-  };
+        // --- 3. ОБЪЕКТЫ ---
+        // Пол
+        const planeGeo = new THREE.PlaneGeometry(2000, 2000);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.receiveShadow = true;
+        scene.add(plane);
 
-  socket.emit('init', { obstacles: OBSTACLES, mapSize: MAP_SIZE, myId: socket.id });
+        // Сетка на полу (Neon Style)
+        const gridHelper = new THREE.GridHelper(2000, 50, 0x00ffff, 0x333333);
+        scene.add(gridHelper);
 
-  socket.on('input', (data) => {
-    const p = PLAYERS[socket.id];
-    if (!p || p.hp <= 0) return;
+        // Хранилища 3D объектов
+        const playerMeshes = {}; // ID -> Mesh
+        const bulletMeshes = [];
+        let obstacleMeshes = [];
 
-    p.angle = data.angle;
-    const speed = 5;
+        let myId = null;
+        let mouse = new THREE.Vector2();
+        let raycaster = new THREE.Raycaster();
+        let groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Плоскость Y=0 для Raycast
 
-    let nx = p.x;
-    let ny = p.y; // На сервере Y - это глубина (Z в 3D)
+        // --- 4. ЛОГИКА СЕТИ ---
+        socket.on('init', (data) => {
+            myId = data.myId;
+            
+            // Создаем стены
+            data.obstacles.forEach(obs => {
+                const geo = new THREE.BoxGeometry(obs.w, 60, obs.h); // Высота стен 60
+                const mat = new THREE.MeshLambertMaterial({ color: 0x0088ff });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(obs.x, 30, obs.y); // Y=30 (половина высоты)
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+                obstacleMeshes.push(mesh);
+            });
+        });
 
-    if (data.w) ny -= speed;
-    if (data.s) ny += speed;
-    if (data.a) nx -= speed;
-    if (data.d) nx += speed;
+        // Создаем "Человечка" (Робота)
+        function createPlayerMesh(color) {
+            const group = new THREE.Group();
 
-    // Простая коллизия со стенами
-    let collide = false;
-    // Границы карты
-    if (Math.abs(nx) > MAP_SIZE/2 || Math.abs(ny) > MAP_SIZE/2) collide = true;
-    
-    for (let o of OBSTACLES) {
-        if (nx > o.x - o.w/2 - 10 && nx < o.x + o.w/2 + 10 &&
-            ny > o.y - o.h/2 - 10 && ny < o.y + o.h/2 + 10) collide = true;
-    }
+            // Тело
+            const bodyGeo = new THREE.CylinderGeometry(10, 10, 30, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 15;
+            body.castShadow = true;
+            group.add(body);
 
-    if (!collide) {
-        p.x = nx;
-        p.y = ny;
-    }
-  });
+            // Голова
+            const headGeo = new THREE.SphereGeometry(8, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 35;
+            group.add(head);
 
-  socket.on('shoot', () => {
-    const p = PLAYERS[socket.id];
-    if (!p || p.hp <= 0) return;
+            // Оружие (коробка спереди)
+            const gunGeo = new THREE.BoxGeometry(8, 8, 20);
+            const gunMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const gun = new THREE.Mesh(gunGeo, gunMat);
+            gun.position.set(5, 20, 10); // Сдвинуто вправо и вперед
+            group.add(gun);
 
-    BULLETS.push({
-      x: p.x,
-      y: p.y,
-      vx: Math.cos(p.angle) * 15,
-      vy: Math.sin(p.angle) * 15,
-      owner: socket.id,
-      life: 60
-    });
-  });
+            return group;
+        }
 
-  socket.on('disconnect', () => {
-    delete PLAYERS[socket.id];
-  });
-});
-
-// Игровой цикл
-setInterval(() => {
-  for (let i = BULLETS.length - 1; i >= 0; i--) {
-    let b = BULLETS[i];
-    b.x += b.vx;
-    b.y += b.vy;
-    b.life--;
-
-    let hit = false;
-    // Стены
-    for (let o of OBSTACLES) {
-        if (b.x > o.x - o.w/2 && b.x < o.x + o.w/2 &&
-            b.y > o.y - o.h/2 && b.y < o.y + o.h/2) hit = true;
-    }
-
-    // Игроки
-    if (!hit) {
-        for (let id in PLAYERS) {
-            if (id !== b.owner) {
-                let p = PLAYERS[id];
-                let dist = Math.sqrt((p.x - b.x)**2 + (p.y - b.y)**2);
-                if (dist < 15) { // Радиус попадания
-                    p.hp -= 10;
-                    hit = true;
-                    if (p.hp <= 0) {
-                        p.hp = 100;
-                        p.x = (Math.random() - 0.5) * 800;
-                        p.y = (Math.random() - 0.5) * 800;
-                        if (PLAYERS[b.owner]) PLAYERS[b.owner].score++;
-                    }
-                    break;
+        socket.on('state', (state) => {
+            // 1. ОБНОВЛЕНИЕ ИГРОКОВ
+            // Удаляем отключившихся
+            for (let id in playerMeshes) {
+                if (!state.players[id]) {
+                    scene.remove(playerMeshes[id]);
+                    delete playerMeshes[id];
                 }
             }
+
+            for (let id in state.players) {
+                const p = state.players[id];
+                
+                // Создаем, если нет
+                if (!playerMeshes[id]) {
+                    playerMeshes[id] = createPlayerMesh(p.color);
+                    scene.add(playerMeshes[id]);
+                }
+
+                const mesh = playerMeshes[id];
+                
+                // Интерполяция позиции (плавность)
+                // Серверные координаты X и Y превращаем в 3D X и Z
+                const targetPos = new THREE.Vector3(p.x, 0, p.y); 
+                mesh.position.lerp(targetPos, 0.3);
+                mesh.rotation.y = -p.angle + Math.PI / 2; // Поворот
+
+                // Если это я, обновляем UI и камеру
+                if (id === myId) {
+                    document.getElementById('hp').innerText = Math.ceil(p.hp);
+                    document.getElementById('score').innerText = p.score;
+                    
+                    // Камера следует за игроком плавно
+                    const camOffset = new THREE.Vector3(0, 400, 300);
+                    camera.position.lerp(mesh.position.clone().add(camOffset), 0.1);
+                    camera.lookAt(mesh.position);
+                }
+            }
+
+            // 2. ОБНОВЛЕНИЕ ПУЛЬ
+            // Удаляем старые пули
+            bulletMeshes.forEach(b => scene.remove(b));
+            bulletMeshes.length = 0;
+
+            state.bullets.forEach(b => {
+                const geo = new THREE.SphereGeometry(3, 8, 8);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(b.x, 20, b.y); // Пули летают на высоте 20
+                scene.add(mesh);
+                bulletMeshes.push(mesh);
+            });
+        });
+
+        // --- 5. УПРАВЛЕНИЕ ---
+        const keys = { w: false, a: false, s: false, d: false };
+
+        window.addEventListener('keydown', e => {
+            if(e.key === 'w') keys.w = true;
+            if(e.key === 'a') keys.a = true;
+            if(e.key === 's') keys.s = true;
+            if(e.key === 'd') keys.d = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            if(e.key === 'w') keys.w = false;
+            if(e.key === 'a') keys.a = false;
+            if(e.key === 's') keys.s = false;
+            if(e.key === 'd') keys.d = false;
+        });
+
+        window.addEventListener('mousemove', e => {
+            // Вычисляем поворот игрока к мыши с помощью Raycaster
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('mousedown', () => {
+            socket.emit('shoot');
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Игровой цикл отправки данных
+        setInterval(() => {
+            if (!myId || !playerMeshes[myId]) return;
+
+            // Raycast на пол, чтобы понять, куда смотрит мышь в 3D мире
+            raycaster.setFromCamera(mouse, camera);
+            const intersectPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(groundPlane, intersectPoint);
+            
+            const myMesh = playerMeshes[myId];
+            // Угол между игроком и точкой пересечения луча на полу
+            const angle = Math.atan2(intersectPoint.z - myMesh.position.z, intersectPoint.x - myMesh.position.x);
+
+            socket.emit('input', { ...keys, angle });
+        }, 1000 / 60);
+
+        // Рендер
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
-    }
-
-    if (hit || b.life <= 0) BULLETS.splice(i, 1);
-  }
-
-  io.emit('state', { players: PLAYERS, bullets: BULLETS });
-}, 1000 / 60);
-
-server.listen(PORT, () => {
-  console.log(`3D Server running on ${PORT}`);
-});
+        animate();
+    </script>
+</body>
+</html>
