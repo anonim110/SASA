@@ -1,191 +1,141 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>NEON LITE</title>
-    <style>
-        body { margin: 0; background: #0a0a0a; overflow: hidden; font-family: sans-serif; cursor: crosshair; }
-        canvas { display: block; }
-        #ui { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; }
-        .bar { width: 200px; height: 15px; background: #333; margin-bottom: 5px; border: 1px solid #fff; }
-        .fill { height: 100%; transition: width 0.1s; }
-        #hp-fill { background: #f04; }
-        #stamina-fill { background: #0cf; }
-        #w-info { margin-top: 10px; color: #aaa; }
-    </style>
-</head>
-<body>
-    <div id="ui">
-        <div class="bar"><div id="hp-fill" class="fill" style="width:100%"></div></div>
-        <div class="bar"><div id="stamina-fill" class="fill" style="width:100%"></div></div>
-        <div id="w-info">1: Rifle | 2: Shotgun | 3: Sniper</div>
-    </div>
-    <canvas id="game"></canvas>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
 
-        let me = { id: null };
-        let players = {};
-        let bullets = [];
-        let orbs = [];
-        let obstacles = [];
-        let mapSize = 2000;
-        let cam = { x: 0, y: 0 };
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-        // Поддержка русской и английской раскладки
-        const keys = {
-            forward: false,  // W или Ц
-            left: false,     // A или Ф
-            backward: false, // S или Ы
-            right: false,    // D или В
-            dash: false
-        };
+const PORT = process.env.PORT || 3000;
 
-        const keyMap = {
-            // Английская
-            'KeyW': 'forward',
-            'KeyA': 'left',
-            'KeyS': 'backward',
-            'KeyD': 'right',
-            // Русская
-            'KeyC': 'forward',  // Ц
-            'KeyA': 'left',     // Ф (A уже есть)
-            'KeyY': 'backward', // Ы (латинская Y)
-            'KeyD': 'right'     // В (латинская D уже есть, но работает)
-        };
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-        window.addEventListener('keydown', e => {
-            const action = keyMap[e.code];
-            if (action) {
-                keys[action] = true;
-                e.preventDefault();
+// --- НАСТРОЙКИ ---
+const MAP_SIZE = 1000; // Размер поля
+const OBSTACLES = [];
+const PLAYERS = {};
+const BULLETS = [];
+
+// Генерируем кубы-стены
+for (let i = 0; i < 15; i++) {
+    OBSTACLES.push({
+        x: (Math.random() - 0.5) * MAP_SIZE,
+        y: (Math.random() - 0.5) * MAP_SIZE, // В 3D это будет Z
+        w: 50 + Math.random() * 100,
+        h: 50 + Math.random() * 100
+    });
+}
+
+io.on('connection', (socket) => {
+  console.log('3D Player connected:', socket.id);
+
+  PLAYERS[socket.id] = {
+    id: socket.id,
+    x: (Math.random() - 0.5) * 800,
+    y: (Math.random() - 0.5) * 800,
+    angle: 0,
+    hp: 100,
+    color: Math.random() * 0xffffff, // Случайный цвет HEX
+    score: 0
+  };
+
+  socket.emit('init', { obstacles: OBSTACLES, mapSize: MAP_SIZE, myId: socket.id });
+
+  socket.on('input', (data) => {
+    const p = PLAYERS[socket.id];
+    if (!p || p.hp <= 0) return;
+
+    p.angle = data.angle;
+    const speed = 5;
+
+    let nx = p.x;
+    let ny = p.y; // На сервере Y - это глубина (Z в 3D)
+
+    if (data.w) ny -= speed;
+    if (data.s) ny += speed;
+    if (data.a) nx -= speed;
+    if (data.d) nx += speed;
+
+    // Простая коллизия со стенами
+    let collide = false;
+    // Границы карты
+    if (Math.abs(nx) > MAP_SIZE/2 || Math.abs(ny) > MAP_SIZE/2) collide = true;
+    
+    for (let o of OBSTACLES) {
+        if (nx > o.x - o.w/2 - 10 && nx < o.x + o.w/2 + 10 &&
+            ny > o.y - o.h/2 - 10 && ny < o.y + o.h/2 + 10) collide = true;
+    }
+
+    if (!collide) {
+        p.x = nx;
+        p.y = ny;
+    }
+  });
+
+  socket.on('shoot', () => {
+    const p = PLAYERS[socket.id];
+    if (!p || p.hp <= 0) return;
+
+    BULLETS.push({
+      x: p.x,
+      y: p.y,
+      vx: Math.cos(p.angle) * 15,
+      vy: Math.sin(p.angle) * 15,
+      owner: socket.id,
+      life: 60
+    });
+  });
+
+  socket.on('disconnect', () => {
+    delete PLAYERS[socket.id];
+  });
+});
+
+// Игровой цикл
+setInterval(() => {
+  for (let i = BULLETS.length - 1; i >= 0; i--) {
+    let b = BULLETS[i];
+    b.x += b.vx;
+    b.y += b.vy;
+    b.life--;
+
+    let hit = false;
+    // Стены
+    for (let o of OBSTACLES) {
+        if (b.x > o.x - o.w/2 && b.x < o.x + o.w/2 &&
+            b.y > o.y - o.h/2 && b.y < o.y + o.h/2) hit = true;
+    }
+
+    // Игроки
+    if (!hit) {
+        for (let id in PLAYERS) {
+            if (id !== b.owner) {
+                let p = PLAYERS[id];
+                let dist = Math.sqrt((p.x - b.x)**2 + (p.y - b.y)**2);
+                if (dist < 15) { // Радиус попадания
+                    p.hp -= 10;
+                    hit = true;
+                    if (p.hp <= 0) {
+                        p.hp = 100;
+                        p.x = (Math.random() - 0.5) * 800;
+                        p.y = (Math.random() - 0.5) * 800;
+                        if (PLAYERS[b.owner]) PLAYERS[b.owner].score++;
+                    }
+                    break;
+                }
             }
-            if (e.code === 'Space') {
-                keys.dash = true;
-                e.preventDefault();
-            }
-            if (['Digit1','Digit2','Digit3'].includes(e.code)) {
-                socket.emit('changeWeapon', e.key);
-            }
-        });
+        }
+    }
 
-        window.addEventListener('keyup', e => {
-            const action = keyMap[e.code];
-            if (action) keys[action] = false;
-            if (e.code === 'Space') keys.dash = false;
-        });
+    if (hit || b.life <= 0) BULLETS.splice(i, 1);
+  }
 
-        let mouse = { x: 0, y: 0 };
-        window.addEventListener('mousemove', e => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
+  io.emit('state', { players: PLAYERS, bullets: BULLETS });
+}, 1000 / 60);
 
-        window.addEventListener('mousedown', e => {
-            if (e.button === 0) socket.emit('shoot');
-        });
-
-        // Отправка ввода 60 раз в секунду
-        setInterval(() => {
-            if (!me.id) return;
-            const angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
-            socket.emit('input', {
-                forward: keys.forward,
-                left: keys.left,
-                backward: keys.backward,
-                right: keys.right,
-                dash: keys.dash,
-                angle
-            });
-        }, 1000/60);
-
-        socket.on('init', (data) => {
-            obstacles = data.obstacles;
-            mapSize = data.mapSize || 2000;
-            me.id = data.myId;
-        });
-
-        socket.on('state', (state) => {
-            players = state.players;
-            bullets = state.bullets || [];
-            orbs = state.orbs || [];
-
-            const myPlayer = players[me.id];
-            if (myPlayer) {
-                cam.x = canvas.width/2 - myPlayer.x;
-                cam.y = canvas.height/2 - myPlayer.y;
-                document.getElementById('hp-fill').style.width = Math.max(0, myPlayer.hp) + '%';
-                document.getElementById('stamina-fill').style.width = Math.max(0, myPlayer.stamina) + '%';
-            }
-
-            // Фон
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.translate(cam.x, cam.y);
-
-            // Граница карты
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(0, 0, mapSize, mapSize);
-
-            // Аптечки (orbs)
-            ctx.fillStyle = '#0f8';
-            for (let o of orbs) {
-                ctx.beginPath();
-                ctx.arc(o.x, o.y, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Препятствия
-            ctx.fillStyle = '#222';
-            ctx.strokeStyle = '#444';
-            ctx.lineWidth = 2;
-            for (let o of obstacles) {
-                ctx.fillRect(o.x, o.y, o.w, o.h);
-                ctx.strokeRect(o.x, o.y, o.w, o.h);
-            }
-
-            // Пули
-            ctx.fillStyle = '#ff0';
-            for (let b of bullets) {
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Игроки
-            for (let id in players) {
-                let p = players[id];
-                ctx.save();
-                ctx.translate(p.x, p.y);
-                ctx.rotate(p.angle + Math.PI/2);
-
-                // Тело
-                ctx.fillStyle = p.color || '#f0f';
-                ctx.beginPath();
-                ctx.arc(0, 0, 20, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Оружие
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(0, -6, 35, 12);
-
-                ctx.restore();
-            }
-
-            ctx.restore();
-        });
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-    </script>
-</body>
-</html>
+server.listen(PORT, () => {
+  console.log(`3D Server running on ${PORT}`);
+});
