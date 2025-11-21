@@ -1,233 +1,228 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D FPS NEON SHOOTER</title>
+    <title>3D FPS NEON SHOOTER — STABLE EDITION</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; cursor: none; }
-        #ui { position: absolute; top: 10px; left: 10px; color: #0ff; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 0 0 5px #000; }
-        /* Простой прицел в центре экрана */
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 2px; height: 2px; background: #0f0; box-shadow: 0 0 10px #0f0; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
-        #instruction { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 5px; z-index: 10; }
+        body { margin:0; overflow:hidden; background:#000; cursor:none; }
+        #ui { position:absolute; top:10px; left:10px; color:#0ff; font-weight:bold; pointer-events:none; z-index:10; text-shadow:0 0 10px #000; }
+        #crosshair { position:absolute; top:50%; left:50%; width:30px; height:30px; border:2px solid #0f0; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 15px #0f0; pointer-events:none; z-index:10; }
+        #crosshair::before { content:''; position:absolute; top:50%; left:50%; width:4px; height:20px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
+        #crosshair::after { content:''; position:absolute; top:50%; left:50%; width:20px; height:4px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
+        #instruction { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:30px; border:2px solid #0ff; border-radius:10px; color:#0ff; font-size:24px; z-index:10; box-shadow:0 0 30px #0ff; }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-    <script type="importmap">
-      { "imports": { "three": "https://unpkg.com/three@0.154.0/build/three.module.js" } }
-    </script>
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.154.0/build/three.module.js" } }</script>
 </head>
 <body>
-    <div id="ui">
-        WASD - Move | MOUSE - Aim/Shoot<br>
-        HP: <span id="hp">100</span> | Kills: <span id="score">0</span>
-    </div>
+    <div id="ui">WASD — движение | Мышь — прицел/стрельба<br>HP: <span id="hp">100</span> | Убийств: <span id="score">0</span></div>
     <div id="crosshair"></div>
-    <div id="instruction">
-        КЛИКНИТЕ ПО ЭКРАНУ, ЧТОБЫ НАЧАТЬ (ЗАХВАТ КУРСОРA)
-    </div>
-    
+    <div id="instruction">КЛИК ДЛЯ ЗАХВАТА КУРСОРА</div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script type="module">
         import * as THREE from 'three';
 
-        const socket = io();
+        const socket = io({ reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 });
 
-        // --- 1. СЦЕНА THREE.JS ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.Fog(0x050510, 800, 1500);
+        scene.fog = new THREE.FogExp2(0x050510, 0.0012);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 30, 0); 
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 3000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(innerWidth, innerHeight);
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. УЛУЧШЕННОЕ ОСВЕЩЕНИЕ ---
-        const ambientLight = new THREE.AmbientLight(0x505050, 1.5);
-        scene.add(ambientLight);
-        
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 1.2);
-        scene.add(hemiLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.position.set(200, 500, 300);
+        // Освещение
+        scene.add(new THREE.AmbientLight(0x404060, 1.2));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(500, 800, 600);
         dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
         scene.add(dirLight);
-        
-        // --- ДИНАМИЧЕСКИЙ СВЕТ ИГРОКА (Фонарик) ---
-        const playerLight = new THREE.PointLight(0xffccaa, 5, 200); 
+
+        const playerLight = new THREE.PointLight(0xffaa77, 7, 300);
         playerLight.castShadow = true;
-        playerLight.shadow.mapSize.width = 1024;
-        playerLight.shadow.mapSize.height = 1024;
         scene.add(playerLight);
 
-        // --- ГРУНТ и СЕТКА ---
-        const planeGeo = new THREE.PlaneGeometry(2000, 2000);
-        const planeMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
+        // Пол
+        const plane = new THREE.Mesh(
+            new THREE.PlaneGeometry(4000, 4000),
+            new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.95 })
+        );
         plane.rotation.x = -Math.PI / 2;
         plane.receiveShadow = true;
         scene.add(plane);
+        scene.add(new THREE.GridHelper(4000, 100, 0x00ffff, 0x002233));
 
-        const gridHelper = new THREE.GridHelper(2000, 50, 0x00ffff, 0x333333);
-        scene.add(gridHelper);
+        // === INPUT (стабильный, без зависимости от раскладки) ===
+        const move = { forward: false, left: false, backward: false, right: false };
+        const keyMap = { KeyW: 'forward', KeyA: 'left', KeyS: 'backward', KeyD: 'right', KeyЦ: 'forward', KeyФ: 'left', KeyЫ: 'backward', KeyВ: 'right' };
 
-        const playerMeshes = {};
-        const bulletMeshes = [];
-        let myId = null;
+        document.addEventListener('keydown', e => { if (keyMap[e.code]) { move[keyMap[e.code]] = true; e.preventDefault(); } });
+        document.addEventListener('keyup', e => { if (keyMap[e.code]) move[keyMap[e.code]] = false; });
 
-        // --- 3. FPS INPUT ---
-        let keys = { w: false, a: false, s: false, d: false };
-        let playerAngleYaw = 0;
-        const SENSITIVITY = 0.002;
+        let yaw = 0;
+        const SENSITIVITY = 0.0017;
+
         const instruction = document.getElementById('instruction');
+        renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+        document.addEventListener('pointerlockchange', () => instruction.style.display = document.pointerLockElement ? 'none' : 'block');
+        document.addEventListener('mousemove', e => { if (document.pointerLockElement) yaw -= e.movementX * SENSITIVITY; });
+        document.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement) socket.emit('shoot'); });
 
-        // ВАЖНО: Захват курсора при клике по канвасу
-        renderer.domElement.addEventListener('click', () => {
-            renderer.domElement.requestPointerLock();
-        });
-        
-        document.addEventListener('pointerlockchange', () => {
-            if (document.pointerLockElement === renderer.domElement) {
-                instruction.style.display = 'none';
-            } else {
-                instruction.style.display = 'block';
-            }
-        });
+        // === CLIENT-SIDE PREDICTION + RECONCILIATION ===
+        let myId = null;
+        let serverStateBuffer = [];
+        let lastServerStateTime = 0;
+        let pendingInputs = [];
 
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === renderer.domElement) {
-                playerAngleYaw -= e.movementX * SENSITIVITY;
-            }
-        });
-        
-        document.addEventListener('mousedown', () => {
-            if (document.pointerLockElement === renderer.domElement) {
-                socket.emit('shoot');
-            }
-        });
+        const localPlayer = { x: 0, y: 0, angle: 0, hp: 100, score: 0 }; // наша предиктивная копия
 
-        window.addEventListener('keydown', e => {
-            if(e.key === 'w') keys.w = true;
-            if(e.key === 'a') keys.a = true;
-            if(e.key === 's') keys.s = true;
-            if(e.key === 'd') keys.d = true;
-        });
+        // === МЕШИ ===
+        const playerMeshes = {};
+        const bulletPool = [];
+        const activeBullets = [];
 
-        window.addEventListener('keyup', e => {
-            if(e.key === 'w') keys.w = false;
-            if(e.key === 'a') keys.a = false;
-            if(e.key === 's') keys.s = false;
-            if(e.key === 'd') keys.d = false;
-        });
-
-        // --- 3D МОДЕЛИ ---
-        function createPlayerMesh(color) {
-            const group = new THREE.Group();
-            
-            const bodyGeo = new THREE.CylinderGeometry(10, 10, 30, 16);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: color });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 15;
-            body.castShadow = true;
-            group.add(body);
-
-            const headGeo = new THREE.SphereGeometry(8, 16, 16);
-            const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const head = new THREE.Mesh(headGeo, headMat);
-            head.position.y = 35;
-            group.add(head);
-
-            const gunGeo = new THREE.BoxGeometry(8, 8, 20);
-            const gunMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-            const gun = new THREE.Mesh(gunGeo, gunMat);
-            gun.position.set(10, 15, 0); 
-            group.add(gun);
-
-            return group;
+        function getBullet() {
+            if (bulletPool.length) return bulletPool.pop();
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(4, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xffff00 })
+            );
+            return mesh;
         }
 
-        // --- СЕТЕВОЕ ОБНОВЛЕНИЕ ---
-        socket.on('init', (data) => {
+        function createPlayerMesh(color) {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(11, 13, 36, 16), new THREE.MeshStandardMaterial({ color }));
+            body.position.y = 18; body.castShadow = true; g.add(body);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(9, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffddaa }));
+            head.position.y = 42; g.add(head);
+            const gun = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 30), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+            gun.position.set(14, 22, 10); g.add(gun);
+            return g;
+        }
+
+        // === СОКЕТ ===
+        socket.on('init', data => {
             myId = data.myId;
-            data.obstacles.forEach(obs => {
-                const geo = new THREE.BoxGeometry(obs.w, 60, obs.h);
-                const mat = new THREE.MeshLambertMaterial({ color: 0x0088ff });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(obs.x, 30, obs.y);
-                mesh.castShadow = true;
-                scene.add(mesh);
+            localPlayer.x = data.x || 0;
+            localPlayer.y = data.y || 0;
+            data.obstacles.forEach(o => {
+                const box = new THREE.Mesh(
+                    new THREE.BoxGeometry(o.w, 100, o.h),
+                    new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x004488 })
+                );
+                box.position.set(o.x, 50, o.y);
+                box.castShadow = true; box.receiveShadow = true;
+                scene.add(box);
             });
         });
 
-        socket.on('state', (state) => {
-            for (let id in playerMeshes) {
-                if (!state.players[id]) {
-                    scene.remove(playerMeshes[id]);
-                    delete playerMeshes[id];
-                }
-            }
-
-            for (let id in state.players) {
-                const p = state.players[id];
-                
-                if (!playerMeshes[id]) {
-                    playerMeshes[id] = createPlayerMesh(p.color);
-                    scene.add(playerMeshes[id]);
-                }
-
-                const mesh = playerMeshes[id];
-                const targetPos = new THREE.Vector3(p.x, 0, p.y); 
-                mesh.position.lerp(targetPos, 0.3);
-                
-                if (id === myId) {
-                    // ПЕРЕМЕЩАЕМ КАМЕРУ И СВЕТ НА УРОВЕНЬ ГЛАЗ ИГРОКА
-                    camera.position.set(p.x, 30, p.y);
-                    camera.rotation.y = playerAngleYaw;
-                    
-                    playerLight.position.set(p.x, 35, p.y); 
-                    
-                    // СКРЫВАЕМ СВОЮ МОДЕЛЬ
-                    mesh.visible = false;
-                    
-                    document.getElementById('hp').innerText = Math.ceil(p.hp);
-                    document.getElementById('score').innerText = p.score;
-                } else {
-                    mesh.rotation.y = -p.angle + Math.PI / 2; // Угол от сервера
-                    mesh.visible = true;
-                }
-            }
-
-            // Пули
-            bulletMeshes.forEach(b => scene.remove(b));
-            bulletMeshes.length = 0;
-
-            state.bullets.forEach(b => {
-                const geo = new THREE.SphereGeometry(3, 8, 8);
-                const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(b.x, 20, b.y);
-                scene.add(mesh);
-                bulletMeshes.push(mesh);
-            });
-        });
-
-        // --- ОТПРАВКА INPUT ---
-        setInterval(() => {
+        socket.on('state', state => {
             if (!myId) return;
+            serverStateBuffer.push({ time: performance.now(), state });
+            lastServerStateTime = state.time || performance.now();
 
-            // Отправляем текущий угол, куда смотрит мышь
-            // +Math.PI / 2 для компенсации направления Three.js
-            socket.emit('input', { ...keys, angle: playerAngleYaw + Math.PI / 2 }); 
-        }, 1000 / 60);
+            // Reconciliation
+            const myServerPlayer = state.players[myId];
+            if (myServerPlayer) {
+                const dx = myServerPlayer.x - localPlayer.x;
+                const dz = myServerPlayer.y - localPlayer.y;
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    localPlayer.x = myServerPlayer.x;
+                    localPlayer.y = myServerPlayer.y;
+                    // Переигрываем все pending inputs
+                    pendingInputs.forEach(input => applyInput(input, localPlayer, 1 / 60));
+                }
+                localPlayer.hp = myServerPlayer.hp;
+                localPlayer.score = myServerPlayer.score || 0;
+                document.getElementById('hp').innerText = Math.max(0, Math.ceil(localPlayer.hp));
+                document.getElementById('score').innerText = localPlayer.score;
+            }
+        });
 
-        // --- РЕНДЕР ---
+        function applyInput(input, player, dt) {
+            const speed = 300 * dt;
+            const dir = new THREE.Vector2(
+                (input.right ? 1 : 0) - (input.left ? 1 : 0),
+                (input.backward ? 1 : 0) - (input.forward ? 1 : 0)
+            );
+            if (dir.lengthSq() > 0) dir.normalize();
+            const forward = new THREE.Vector3(Math.sin(input.angle), 0, Math.cos(input.angle));
+            const right = new THREE.Vector3(Math.cos(input.angle), 0, -Math.sin(input.angle));
+            player.x += (forward.x * -dir.y + right.x * dir.x) * speed;
+            player.y += (forward.z * -dir.y + right.z * dir.x) * speed;
+        }
+
+        // === ТИК 60 FPS ===
+        let lastTick = performance.now();
+        function tick() {
+            const now = performance.now();
+            const dt = Math.min((now - lastTick) / 1000, 0.1);
+            lastTick = now;
+
+            if (myId) {
+                const input = { ...move, angle: yaw, seq: pendingInputs.length };
+                socket.emit('input', input);
+                applyInput(input, localPlayer, dt);
+                pendingInputs.push(input);
+
+                camera.position.set(localPlayer.x, 55, localPlayer.y);
+                camera.rotation.y = yaw;
+                playerLight.position.set(localPlayer.x, 60, localPlayer.y);
+            }
+
+            // Интерполяция/экстраполяция других игроков
+            const renderTime = performance.now() - 100; // 100 мс лаг компенсация
+            serverStateBuffer = serverStateBuffer.filter(s => s.time > performance.now() - 500);
+
+            const latestState = serverStateBuffer[serverStateBuffer.length - 1]?.state;
+            if (latestState) {
+                Object.entries(latestState.players).forEach(([id, p]) => {
+                    if (id === myId) return;
+                    if (!playerMeshes[id]) {
+                        playerMeshes[id] = createPlayerMesh(p.color || 0xff00ff);
+                        scene.add(playerMeshes[id]);
+                    }
+                    const mesh = playerMeshes[id];
+                    mesh.position.set(p.x, 0, p.y);
+                    mesh.rotation.y = p.angle;
+                    mesh.visible = true;
+                });
+            }
+
+            // Пули (из последнего состояния)
+            if (latestState) {
+                activeBullets.forEach(m => { scene.remove(m); bulletPool.push(m); });
+                activeBullets.length = 0;
+                latestState.bullets.forEach(b => {
+                    const mesh = getBullet();
+                    mesh.position.set(b.x, 40, b.y);
+                    scene.add(mesh);
+                    activeBullets.push(mesh);
+                });
+            }
+
+            requestAnimationFrame(tick);
+        }
+        tick();
+
+        // Рендер
         function animate() {
-            requestAnimationFrame(animate);
             renderer.render(scene, camera);
+            requestAnimationFrame(animate);
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
     </script>
 </body>
 </html>
