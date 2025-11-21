@@ -1,24 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEON BATTLE</title>
+    <title>NEON PRO</title>
     <style>
-        body { margin: 0; background: #050505; overflow: hidden; font-family: sans-serif; }
+        body { margin: 0; background: #0a0a0a; overflow: hidden; font-family: 'Arial Black', sans-serif; cursor: crosshair; }
         canvas { display: block; }
-        #ui { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; }
-        h1 { margin: 0; color: #0ff; text-shadow: 0 0 10px #0ff; }
-        #score { font-size: 20px; }
-        #leaderboard { position: absolute; top: 10px; right: 10px; color: #fff; text-align: right; pointer-events: none;}
+        
+        #ui-layer { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+        
+        #hud { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 0 0 5px rgba(0,0,0,0.8); }
+        .bar-wrap { width: 250px; height: 15px; background: #333; border: 2px solid #555; margin-bottom: 5px; transform: skewX(-10deg); }
+        .bar-fill { height: 100%; transition: width 0.1s; }
+        #hp-fill { background: #ff0044; width: 100%; box-shadow: 0 0 10px #ff0044; }
+        #stamina-fill { background: #00ccff; width: 100%; box-shadow: 0 0 10px #00ccff; }
+        
+        #weapons { margin-top: 10px; display: flex; gap: 10px; }
+        .w-icon { padding: 5px 10px; background: rgba(0,0,0,0.5); border: 1px solid #444; color: #888; }
+        .w-active { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
+
+        #killfeed { position: absolute; top: 20px; right: 20px; text-align: right; color: #ffcc00; font-size: 14px; text-shadow: 0 0 2px black; }
+        
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; pointer-events: auto; flex-direction: column;}
+        #start-btn { padding: 20px 50px; font-size: 24px; background: #ff0044; color: white; border: none; cursor: pointer; border: 4px solid white; box-shadow: 0 0 20px #ff0044; font-family: 'Arial Black'; }
+        #start-btn:hover { transform: scale(1.1); }
+        
+        .help { color: #aaa; margin-top: 20px; font-size: 14px; text-align: center; line-height: 1.5; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <h1>NEON BATTLE</h1>
-        <div id="hp-bar" style="width: 200px; height: 20px; background: #333; margin-top: 5px; border: 2px solid #fff;">
-            <div id="hp-fill" style="width: 100%; height: 100%; background: #0f0; transition: width 0.1s;"></div>
+
+    <div id="ui-layer">
+        <div id="killfeed"></div>
+        <div id="hud">
+            <div class="bar-wrap"><div id="hp-fill" class="bar-fill"></div></div>
+            <div class="bar-wrap"><div id="stamina-fill" class="bar-fill"></div></div>
+            <div id="weapons">
+                <div id="w1" class="w-icon w-active">1. RIFLE</div>
+                <div id="w2" class="w-icon">2. SHOTGUN</div>
+                <div id="w3" class="w-icon">3. SNIPER</div>
+            </div>
         </div>
     </div>
-    <div id="leaderboard"></div>
+
+    <div id="start-screen">
+        <button id="start-btn">CLICK TO PLAY</button>
+        <div class="help">
+            WASD = Move<br>SPACE = Dash<br>CLICK = Shoot<br>1, 2, 3 = Change Weapon<br>ESC = Unlock Cursor
+        </div>
+    </div>
+
     <canvas id="game"></canvas>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -30,111 +60,249 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        let me = { id: null, x: 0, y: 0 };
+        // --- STATE ---
+        let me = { id: null, x: 0, y: 0, hp: 100, stamina: 100 };
         let obstacles = [];
+        let orbs = [];
         let mapSize = 2000;
-        let keys = { w: false, a: false, s: false, d: false };
-        let mouse = { x: 0, y: 0 };
+        
+        let keys = { w: false, a: false, s: false, d: false, dash: false };
+        let mouse = { x: canvas.width/2, y: canvas.height/2 }; // Virtual mouse pos
+        let cam = { x: 0, y: 0 };
+        let particles = [];
+        let shake = 0;
 
-        socket.on('mapData', (data) => {
+        // --- POINTER LOCK & INPUT ---
+        const startBtn = document.getElementById('start-btn');
+        const startScreen = document.getElementById('start-screen');
+
+        startBtn.addEventListener('click', () => {
+            canvas.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === canvas) {
+                startScreen.style.display = 'none';
+            } else {
+                startScreen.style.display = 'flex';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === canvas) {
+                // Двигаем виртуальный прицел
+                mouse.x += e.movementX;
+                mouse.y += e.movementY;
+                
+                // Ограничиваем прицел экраном (чтобы не улетал далеко)
+                mouse.x = Math.max(0, Math.min(canvas.width, mouse.x));
+                mouse.y = Math.max(0, Math.min(canvas.height, mouse.y));
+            }
+        });
+
+        window.addEventListener('mousedown', () => {
+            if(document.pointerLockElement === canvas) socket.emit('shoot');
+        });
+
+        window.addEventListener('keydown', e => {
+            if(e.key === 'w') keys.w = true;
+            if(e.key === 'a') keys.a = true;
+            if(e.key === 's') keys.s = true;
+            if(e.key === 'd') keys.d = true;
+            if(e.code === 'Space') keys.dash = true;
+            
+            if(e.key === '1') { socket.emit('changeWeapon', 1); updateWeaponUI(1); }
+            if(e.key === '2') { socket.emit('changeWeapon', 2); updateWeaponUI(2); }
+            if(e.key === '3') { socket.emit('changeWeapon', 3); updateWeaponUI(3); }
+        });
+        
+        window.addEventListener('keyup', e => {
+            if(e.key === 'w') keys.w = false;
+            if(e.key === 'a') keys.a = false;
+            if(e.key === 's') keys.s = false;
+            if(e.key === 'd') keys.d = false;
+            if(e.code === 'Space') keys.dash = false;
+        });
+
+        function updateWeaponUI(num) {
+            document.querySelectorAll('.w-icon').forEach(el => el.classList.remove('w-active'));
+            document.getElementById('w'+num).classList.add('w-active');
+        }
+
+        // --- NETWORKING ---
+        socket.on('init', (data) => {
             obstacles = data.obstacles;
             mapSize = data.mapSize;
             me.id = data.myId;
         });
 
-        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
-        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        window.addEventListener('mousedown', () => socket.emit('shoot'));
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-
-        // Отправка управления
+        // Отправка данных на сервер
         setInterval(() => {
             if (!me.id) return;
+            // Рассчитываем угол от ЦЕНТРА экрана (где игрок) к курсору мыши
             const angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
-            socket.emit('input', { w: keys.w, s: keys.s, a: keys.a, d: keys.d, angle: angle });
+            socket.emit('input', { ...keys, angle });
         }, 1000 / 60);
 
-        socket.on('state', (state) => {
-            // Очистка
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Визуальные эффекты (Звук/Кровь)
+        socket.on('hit', (pos) => {
+            for(let i=0; i<5; i++) createParticle(pos.x, pos.y, 'red');
+        });
 
-            // Поиск себя
+        socket.on('sound', (data) => {
+            if (data.type === 'shoot') {
+                // Если стрелял я - трясем экран
+                const p = playersCache[socket.id]; // (defined below in loop)
+                if (data.wpn === 3) shake = 10; // Снайперка трясет сильно
+                else shake = 2;
+            }
+        });
+        
+        socket.on('killFeed', (data) => {
+            const feed = document.getElementById('killfeed');
+            const msg = document.createElement('div');
+            msg.innerText = `${data.killer} 💀 ${data.victim}`;
+            feed.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        });
+
+        let playersCache = {};
+
+        // --- RENDER LOOP ---
+        socket.on('state', (state) => {
+            playersCache = state.players;
             const myPlayer = state.players[me.id];
-            let camX = 0, camY = 0;
             
+            // Плавная камера (Lerp)
             if (myPlayer) {
-                camX = canvas.width/2 - myPlayer.x;
-                camY = canvas.height/2 - myPlayer.y;
-                // Обновляем UI
+                let targetX = myPlayer.x - canvas.width/2;
+                let targetY = myPlayer.y - canvas.height/2;
+                cam.x += (targetX - cam.x) * 0.1;
+                cam.y += (targetY - cam.y) * 0.1;
+                
+                // UI Update
                 document.getElementById('hp-fill').style.width = myPlayer.hp + '%';
+                document.getElementById('stamina-fill').style.width = myPlayer.stamina + '%';
             }
 
-            ctx.save();
-            ctx.translate(camX, camY);
+            // Применяем тряску
+            let shakeX = (Math.random() - 0.5) * shake;
+            let shakeY = (Math.random() - 0.5) * shake;
+            if(shake > 0) shake *= 0.9;
 
-            // Рисуем границы карты
-            ctx.strokeStyle = '#ff0055';
-            ctx.lineWidth = 5;
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-cam.x + shakeX, -cam.y + shakeY);
+
+            // Границы карты
+            ctx.strokeStyle = '#333';
             ctx.strokeRect(0, 0, mapSize, mapSize);
 
-            // Сетка на полу
-            ctx.strokeStyle = '#222';
+            // Сетка
+            ctx.strokeStyle = '#1a1a1a';
             ctx.lineWidth = 2;
             ctx.beginPath();
             for(let x=0; x<=mapSize; x+=100) { ctx.moveTo(x,0); ctx.lineTo(x,mapSize); }
             for(let y=0; y<=mapSize; y+=100) { ctx.moveTo(0,y); ctx.lineTo(mapSize,y); }
             ctx.stroke();
 
+            // Аптечки
+            for(let o of state.orbs) {
+                ctx.fillStyle = '#0f0';
+                ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
+                ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
             // Стены
-            ctx.fillStyle = '#222';
-            ctx.strokeStyle = '#0ff';
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#0ff';
-            for (let o of obstacles) {
+            ctx.fillStyle = '#111';
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
+            for(let o of obstacles) {
                 ctx.fillRect(o.x, o.y, o.w, o.h);
                 ctx.strokeRect(o.x, o.y, o.w, o.h);
             }
-            ctx.shadowBlur = 0;
+
+            // Частицы
+            updateParticles();
 
             // Пули
-            ctx.fillStyle = '#ff0';
             for (let b of state.bullets) {
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 10; ctx.shadowColor = '#ffff00';
                 ctx.beginPath();
-                ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
+                ctx.arc(b.x, b.y, 4, 0, Math.PI*2);
                 ctx.fill();
+                ctx.shadowBlur = 0;
             }
 
             // Игроки
-            let leaders = [];
             for (let id in state.players) {
-                let p = state.players[id];
-                leaders.push(`${p.score} pts`);
-
+                const p = state.players[id];
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.angle);
-                
+
+                // Руки/Оружие
+                ctx.fillStyle = '#888';
+                if (p.weapon === 1) ctx.fillRect(10, -5, 30, 10); // Rifle
+                if (p.weapon === 2) ctx.fillRect(10, -5, 20, 15); // Shotgun
+                if (p.weapon === 3) ctx.fillRect(10, -3, 50, 6);  // Sniper
+
                 // Тело
                 ctx.fillStyle = p.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = p.color;
-                ctx.beginPath();
-                ctx.arc(0, 0, 22, 0, Math.PI*2);
-                ctx.fill();
+                ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+                ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
 
-                // Пушка
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(10, -5, 25, 10);
-
+                // Имя
                 ctx.restore();
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.username, p.x, p.y - 35);
             }
+
             ctx.restore();
-            
-            document.getElementById('leaderboard').innerHTML = leaders.join('<br>');
+
+            // --- DRAW CURSOR (Crosshair) ---
+            if (document.pointerLockElement === canvas) {
+                ctx.strokeStyle = '#0f0';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(mouse.x, mouse.y, 10, 0, Math.PI*2);
+                ctx.moveTo(mouse.x - 15, mouse.y); ctx.lineTo(mouse.x + 15, mouse.y);
+                ctx.moveTo(mouse.x, mouse.y - 15); ctx.lineTo(mouse.x, mouse.y + 15);
+                ctx.stroke();
+            }
         });
+
+        // Система частиц
+        function createParticle(x, y, color) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5,
+                life: 20,
+                color: color
+            });
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 20;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
     </script>
 </body>
 </html>
