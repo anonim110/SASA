@@ -7,6 +7,7 @@
         #ui { position: absolute; top: 10px; left: 10px; color: #0ff; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 0 0 5px #000; }
         /* Простой прицел в центре экрана */
         #crosshair { position: absolute; top: 50%; left: 50%; width: 2px; height: 2px; background: #0f0; box-shadow: 0 0 10px #0f0; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
+        #instruction { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 5px; z-index: 10; }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -19,6 +20,9 @@
         HP: <span id="hp">100</span> | Kills: <span id="score">0</span>
     </div>
     <div id="crosshair"></div>
+    <div id="instruction">
+        КЛИКНИТЕ ПО ЭКРАНУ, ЧТОБЫ НАЧАТЬ (ЗАХВАТ КУРСОРA)
+    </div>
     
     <script src="/socket.io/socket.io.js"></script>
     <script type="module">
@@ -32,23 +36,33 @@
         scene.fog = new THREE.Fog(0x050510, 800, 1500);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        // Камера не имеет начальной позиции, она прикрепится к игроку
-        camera.position.set(0, 30, 0); // Высота глаз 30
-
+        camera.position.set(0, 30, 0); 
+        
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // --- 2. ОСВЕЩЕНИЕ и ГРУНТ (Пол) ---
-        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        // --- 2. УЛУЧШЕННОЕ ОСВЕЩЕНИЕ ---
+        const ambientLight = new THREE.AmbientLight(0x505050, 1.5);
         scene.add(ambientLight);
+        
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 1.2);
+        scene.add(hemiLight);
 
         const dirLight = new THREE.DirectionalLight(0xffffff, 1);
         dirLight.position.set(200, 500, 300);
         dirLight.castShadow = true;
         scene.add(dirLight);
+        
+        // --- ДИНАМИЧЕСКИЙ СВЕТ ИГРОКА (Фонарик) ---
+        const playerLight = new THREE.PointLight(0xffccaa, 5, 200); 
+        playerLight.castShadow = true;
+        playerLight.shadow.mapSize.width = 1024;
+        playerLight.shadow.mapSize.height = 1024;
+        scene.add(playerLight);
 
+        // --- ГРУНТ и СЕТКА ---
         const planeGeo = new THREE.PlaneGeometry(2000, 2000);
         const planeMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
         const plane = new THREE.Mesh(planeGeo, planeMat);
@@ -63,24 +77,28 @@
         const bulletMeshes = [];
         let myId = null;
 
-        // --- FPS INPUT ---
+        // --- 3. FPS INPUT ---
         let keys = { w: false, a: false, s: false, d: false };
-        let playerAngleYaw = 0; // Угол поворота игрока (глобальная переменная)
-        let playerPitch = 0; // Угол наклона головы (для реализма, но не используется в 2D логике сервера)
+        let playerAngleYaw = 0;
         const SENSITIVITY = 0.002;
+        const instruction = document.getElementById('instruction');
 
-        // Захват курсора при клике
+        // ВАЖНО: Захват курсора при клике по канвасу
         renderer.domElement.addEventListener('click', () => {
             renderer.domElement.requestPointerLock();
+        });
+        
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === renderer.domElement) {
+                instruction.style.display = 'none';
+            } else {
+                instruction.style.display = 'block';
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
             if (document.pointerLockElement === renderer.domElement) {
-                // Вращение по горизонтали (Yaw)
-                playerAngleYaw -= e.movementX * SENSITIVITY; 
-                // Вращение по вертикали (Pitch, не используется для стрельбы в нашей логике, но нужно для вида)
-                playerPitch += e.movementY * SENSITIVITY;
-                playerPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, playerPitch));
+                playerAngleYaw -= e.movementX * SENSITIVITY;
             }
         });
         
@@ -108,7 +126,6 @@
         function createPlayerMesh(color) {
             const group = new THREE.Group();
             
-            // Тело
             const bodyGeo = new THREE.CylinderGeometry(10, 10, 30, 16);
             const bodyMat = new THREE.MeshStandardMaterial({ color: color });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -116,14 +133,12 @@
             body.castShadow = true;
             group.add(body);
 
-            // Голова
             const headGeo = new THREE.SphereGeometry(8, 16, 16);
             const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
             const head = new THREE.Mesh(headGeo, headMat);
             head.position.y = 35;
             group.add(head);
 
-            // Оружие (просто куб перед камерой)
             const gunGeo = new THREE.BoxGeometry(8, 8, 20);
             const gunMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
             const gun = new THREE.Mesh(gunGeo, gunMat);
@@ -147,7 +162,6 @@
         });
 
         socket.on('state', (state) => {
-            // Удаляем/Обновляем игроков
             for (let id in playerMeshes) {
                 if (!state.players[id]) {
                     scene.remove(playerMeshes[id]);
@@ -166,24 +180,21 @@
                 const mesh = playerMeshes[id];
                 const targetPos = new THREE.Vector3(p.x, 0, p.y); 
                 mesh.position.lerp(targetPos, 0.3);
-                mesh.rotation.y = -p.angle + Math.PI / 2;
                 
-                // --- FPS ЛОГИКА ---
                 if (id === myId) {
-                    // 1. ПЕРЕМЕЩАЕМ КАМЕРУ НА УРОВЕНЬ ГЛАЗ ИГРОКА
-                    camera.position.set(p.x, 30, p.y); // Высота 30
-                    
-                    // 2. ВРАЩАЕМ КАМЕРУ ПО ГОРИЗОНТАЛИ И ВЕРТИКАЛИ
+                    // ПЕРЕМЕЩАЕМ КАМЕРУ И СВЕТ НА УРОВЕНЬ ГЛАЗ ИГРОКА
+                    camera.position.set(p.x, 30, p.y);
                     camera.rotation.y = playerAngleYaw;
                     
-                    // 3. СКРЫВАЕМ СВОЮ МОДЕЛЬ
+                    playerLight.position.set(p.x, 35, p.y); 
+                    
+                    // СКРЫВАЕМ СВОЮ МОДЕЛЬ
                     mesh.visible = false;
                     
-                    // 4. Обновляем UI
                     document.getElementById('hp').innerText = Math.ceil(p.hp);
                     document.getElementById('score').innerText = p.score;
                 } else {
-                    // Другие игроки видимы
+                    mesh.rotation.y = -p.angle + Math.PI / 2; // Угол от сервера
                     mesh.visible = true;
                 }
             }
@@ -206,9 +217,9 @@
         setInterval(() => {
             if (!myId) return;
 
-            // Угол поворота камеры (который управляется мышью) отправляется как угол прицеливания
-            socket.emit('input', { ...keys, angle: playerAngleYaw + Math.PI / 2 });
-            // +Math.PI / 2 для компенсации стандартного направления вращения Three.js
+            // Отправляем текущий угол, куда смотрит мышь
+            // +Math.PI / 2 для компенсации направления Three.js
+            socket.emit('input', { ...keys, angle: playerAngleYaw + Math.PI / 2 }); 
         }, 1000 / 60);
 
         // --- РЕНДЕР ---
