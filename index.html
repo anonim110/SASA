@@ -1,234 +1,386 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>3D TOP-DOWN NEON SHOOTER — STABLE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Общий Мессенджер</title>
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Установка шрифта Inter и кастомные стили -->
     <style>
-        body { margin:0; overflow:hidden; background:#000; cursor:none; }
-        #ui { position:absolute; top:10px; left:10px; color:#0ff; font-weight:bold; pointer-events:none; z-index:10; text-shadow:0 0 10px #000; }
-        #crosshair { position:absolute; top:50%; left:50%; width:26px; height:26px; border:2px solid #0f0; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 15px #0f0; pointer-events:none; z-index:10; }
-        #crosshair::before { content:''; position:absolute; top:50%; left:50%; width:4px; height:16px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
-        #crosshair::after { content:''; position:absolute; top:50%; left:50%; width:16px; height:4px; background:#0f0; transform:translate(-50%,-50%); box-shadow:0 0 10px #0f0; }
-        #instruction { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:30px; border:2px solid #0ff; border-radius:10px; color:#0ff; font-size:24px; z-index:10; box-shadow:0 0 30px #0ff; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb; /* Светло-серый фон */
+        }
+        /* Кастомный скроллбар для области сообщений */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #a5b4fc; /* Светло-фиолетовый */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: #f3f4f6;
+        }
+        /* На мобильных устройствах делаем приложение полноэкранным */
+        @media (max-width: 768px) {
+            #app {
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+        /* Стили для модального окна ника */
+        #nicknameModal {
+            z-index: 50;
+            backdrop-filter: blur(2px);
+        }
     </style>
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.154.0/build/three.module.js" } }</script>
 </head>
-<body>
-    <div id="ui">WASD — движение | Мышь — поворот и стрельба<br>HP: <span id="hp">100</span> | Убийств: <span id="score">0</span></div>
-    <div id="crosshair"></div>
-    <div id="instruction">КЛИК ДЛЯ ЗАХВАТА КУРСОРА</div>
+<body class="min-h-screen flex items-center justify-center p-0 md:p-8">
 
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- 1. Основной контейнер мессенджера -->
+    <div id="app" class="w-full max-w-3xl bg-white shadow-2xl md:rounded-2xl flex flex-col h-[90vh]">
+        
+        <!-- Заголовок и информация о пользователе -->
+        <header class="p-4 md:p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
+            <h1 class="text-2xl font-extrabold tracking-tight">
+                <span role="img" aria-label="Rocket" class="mr-2">💬</span> Общий Чат
+            </h1>
+            <div class="text-xs font-medium mt-1 flex justify-between items-center">
+                <span id="authStatus" class="inline-flex items-center">Подключение...</span>
+                <p id="currentUserId" class="opacity-80"></p>
+            </div>
+        </header>
+
+        <!-- Область сообщений -->
+        <div id="messages" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar flex flex-col">
+            <!-- Сообщения будут добавляться сюда -->
+            <div id="loading" class="text-center text-gray-500 pt-10">Загрузка сообщений...</div>
+        </div>
+
+        <!-- Форма ввода сообщения -->
+        <div class="p-4 md:p-6 border-t bg-white shadow-inner">
+            <div id="messageForm" class="flex space-x-3">
+                <input type="text" id="messageInput" placeholder="Напишите сообщение..."
+                       class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm text-gray-700"
+                       autocomplete="off">
+                <button id="sendButton" onclick="sendMessage()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-200 transform hover:scale-[1.01] disabled:opacity-50 disabled:shadow-none"
+                        disabled>
+                    Отправить
+                </button>
+            </div>
+            <p id="errorFeedback" class="text-red-500 text-sm mt-2 hidden">Не удалось отправить сообщение.</p>
+        </div>
+    </div>
+    
+    <!-- 2. Модальное окно для ввода Ника (@username) -->
+    <div id="nicknameModal" class="fixed inset-0 bg-gray-800 bg-opacity-70 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm m-4">
+            <h2 class="text-xl font-bold mb-4 text-indigo-600">Выберите Ник (@username)</h2>
+            <p class="text-gray-600 mb-4 text-sm">Ваш ник будет начинаться с символа **@**. Используйте только латинские буквы, цифры и подчеркивание (_).</p>
+            
+            <!-- Интегрированное поле ввода с префиксом @ -->
+            <div class="flex border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition duration-150 shadow-sm">
+                <span class="p-3 bg-gray-100 text-gray-500 rounded-l-lg font-mono">@</span>
+                <input type="text" id="nicknameInput" placeholder="username_123"
+                       class="flex-1 p-3 focus:outline-none rounded-r-lg text-gray-700"
+                       maxlength="20">
+            </div>
+
+            <p id="nicknameError" class="text-red-500 text-sm mt-2 hidden">Ник должен содержать от 3 до 20 символов (только латиница, цифры, _).</p>
+            <button onclick="submitNickname()" id="nicknameSubmitButton"
+                    class="mt-5 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl shadow-md transition duration-200 disabled:opacity-50">
+                Продолжить
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
     <script type="module">
-        import * as THREE from 'three';
+        // Импорт необходимых модулей Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setLogLevel, getDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const socket = io({ reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 });
+        // Установка уровня логирования для отладки
+        setLogLevel('Debug');
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.FogExp2(0x050510, 0.0008);
+        let app, db, auth;
+        let userId = null;
+        let userName = null;
+        let isAuthReady = false;
 
-        const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 5000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(innerWidth, innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
+        // Элементы DOM
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const authStatusSpan = document.getElementById('authStatus');
+        const currentUserIdP = document.getElementById('currentUserId');
+        const loadingDiv = document.getElementById('loading');
+        const errorFeedback = document.getElementById('errorFeedback');
+        
+        // Элементы модального окна ника
+        const nicknameModal = document.getElementById('nicknameModal');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const nicknameSubmitButton = document.getElementById('nicknameSubmitButton');
+        const nicknameError = document.getElementById('nicknameError');
 
-        // Освещение
-        scene.add(new THREE.AmbientLight(0x404060, 1.5));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
-        dirLight.position.set(500, 1000, 600);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(2048, 2048);
-        scene.add(dirLight);
-
-        const playerLight = new THREE.PointLight(0xffaa77, 8, 400);
-        playerLight.castShadow = true;
-        scene.add(playerLight);
-
-        // Пол
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(5000, 5000),
-            new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.95 })
-        );
-        plane.rotation.x = -Math.PI / 2;
-        plane.receiveShadow = true;
-        scene.add(plane);
-        scene.add(new THREE.GridHelper(5000, 100, 0x00ffff, 0x002233));
-
-        // === INPUT ===
-        const move = { forward: false, left: false, backward: false, right: false };
-        const keyMap = { KeyW: 'forward', KeyA: 'left', KeyS: 'backward', KeyD: 'right', KeyЦ: 'forward', KeyФ: 'left', KeyЫ: 'backward', KeyВ: 'right' };
-
-        document.addEventListener('keydown', e => { if (keyMap[e.code]) { move[keyMap[e.code]] = true; e.preventDefault(); } });
-        document.addEventListener('keyup', e => { if (keyMap[e.code]) move[keyMap[e.code]] = false; });
-
-        let yaw = 0;
-        const SENSITIVITY = 0.0009; // замедлено в 2 раза
-
-        const instruction = document.getElementById('instruction');
-        renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
-        document.addEventListener('pointerlockchange', () => instruction.style.display = document.pointerLockElement ? 'none' : 'block');
-        document.addEventListener('mousemove', e => { if (document.pointerLockElement) yaw -= e.movementX * SENSITIVITY; });
-        document.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement) socket.emit('shoot'); });
-
-        // === CLIENT PREDICTION ===
-        let myId = null;
-        const localPlayer = { x: 0, y: 0, angle: 0, hp: 100, score: 0 };
-        let pendingInputs = [];
-
-        const playerMeshes = {};
-        const bulletPool = [];
-        const activeBullets = [];
-
-        function getBullet() {
-            if (bulletPool.length) return bulletPool.pop();
-            return new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-        }
-
-        function createPlayerMesh(color) {
-            const g = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(11, 13, 36, 16), new THREE.MeshStandardMaterial({ color }));
-            body.position.y = 18; body.castShadow = true; g.add(body);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(9, Gobierno 16, 16), new THREE.MeshStandardMaterial({ color: 0xffddaa }));
-            head.position.y = 42; g.add(head);
-            const gun = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 32), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-            gun.position.set(14, 22, 10); g.add(gun);
-            return g;
-        }
-
-        socket.on('init', data => {
-            myId = data.myId;
-            localPlayer.x = data.x || 0;
-            localPlayer.y = data.y || 0;
-
-            data.obstacles.forEach(o => {
-                const box = new THREE.Mesh(
-                    new THREE.BoxGeometry(o.w, 120, o.h),
-                    new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x0044aa })
-                );
-                box.position.set(o.x, 60, o.y);
-                box.castShadow = true; box.receiveShadow = true;
-                scene.add(box);
-            });
-        });
-
-        function applyInput(input, player, dt) {
-            const speed = 120 * dt; // скорость уменьшена в 2.5 раза (было ~300)
-            const dir = new THREE.Vector2(
-                (input.right ? 1 : 0) - (input.left ? 1 : 0),
-                (input.backward ? 1 : 0) - (input.forward ? 1 : 0)
-            ).normalizeOrZero();
-            const forward = new THREE.Vector3(Math.sin(input.angle), 0, Math.cos(input.angle));
-            const right = new THREE.Vector3(Math.cos(input.angle), 0, -Math.sin(input.angle));
-            player.x += (forward.x * -dir.y + right.x * dir.x) * speed;
-            player.y += (forward.z * -dir.y + right.z * dir.x) * speed;
-            player.angle = input.angle;
-        }
-
-        // === TOP-DOWN КАМЕРА (сверху вниз) ===
-        const CAMERA_HEIGHT = 600;   // высота камеры
-        const CAMERA_DISTANCE = 300; // расстояние сзади игрока
-        const CAMERA_LERP = 0.08;    // плавность следования
-
-        let cameraTarget = new THREE.Vector3();
-        let cameraOffset = new THREE.Vector3();
-
-        // === ТИК 60 FPS ===
-        let lastTick = performance.now();
-        function tick() {
-            const now = performance.now();
-            const dt = Math.min((now - lastTick) / 1000, 0.1);
-            lastTick = now;
-
-            if (myId) {
-                const input = { ...move, angle: yaw };
-                socket.emit('input', input);
-                applyInput(input, localPlayer, dt);
-                pendingInputs.push(input);
-
-                // === КАМЕРА СВЕРХУ-ВНИЗ СЛЕДИТ ЗА ИГРОКОМ ===
-                const targetX = localPlayer.x;
-                const targetZ = localPlayer.y;
-
-                // Позиция камеры сзади и сверху
-                const backOffset = new THREE.Vector3(
-                    Math.sin(yaw) * CAMERA_DISTANCE,
-                    0,
-                    Math.cos(yaw) * CAMERA_DISTANCE
-                );
-
-                cameraTarget.set(targetX + backOffset.x, targetZ + backOffset.z, 0);
-                camera.position.lerp(new THREE.Vector3(cameraTarget.x, CAMERA_HEIGHT, cameraTarget.y), CAMERA_LERP);
-                camera.lookAt(targetX, 0, targetZ);
-
-                playerLight.position.set(localPlayer.x, 80, localPlayer.y);
-
-                document.getElementById('hp').innerText = Math.max(0, Math.ceil(localPlayer.hp));
-                document.getElementById('score').innerText = localPlayer.score;
-            }
-
-            requestAnimationFrame(tick);
-        }
-        tick();
-
-        // === СОСТОЯНИЕ С СЕРВЕРА ===
-        socket.on('state', state => {
-            if (!myId) return;
-
-            const myServer = state.players[myId];
-            if (myServer) {
-                // reconciliation
-                if (Math.hypot(myServer.x - localPlayer.x, myServer.y - localPlayer.y) > 5) {
-                    localPlayer.x = myServer.x;
-                    localPlayer.y = myServer.y;
-                }
-                localPlayer.hp = myServer.hp;
-                localPlayer.score = myServer.score || 0;
-            }
-
-            // Другие игроки
-            Object.entries(state.players).forEach(([id, p]) => {
-                if (id === myId) return;
-                if (!playerMeshes[id]) {
-                    playerMeshes[id] = createPlayerMesh(p.color || 0xff00ff);
-                    scene.add(playerMeshes[id]);
-                }
-                const mesh = playerMeshes[id];
-                mesh.position.set(p.x, 0, p.y);
-                mesh.rotation.y = p.angle;
-            });
-
-            // Пули
-            activeBullets.forEach(m => { scene.remove(m); bulletPool.push(m); });
-            activeBullets.length = 0;
-            state.bullets?.forEach(b => {
-                const mesh = getBullet();
-                mesh.position.set(b.x, 40, b.y);
-                scene.add(mesh);
-                activeBullets.push(mesh);
-            });
-        });
-
-        function animate() {
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = innerWidth / innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(innerWidth, innerHeight);
-        });
-
-        // Вспомогательная функция
-        THREE.Vector2.prototype.normalizeOrZero = function() {
-            const len = this.length();
-            if (len > 0) this.multiplyScalar(1 / len);
-            return this;
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chat-app-id';
+        
+        // **КОНФИГУРАЦИЯ FIREBASE, ПРЕДОСТАВЛЕННАЯ ПОЛЬЗОВАТЕЛЕМ**
+        const userProvidedConfig = {
+            apiKey: "AIzaSyAemRqS-QxuehmOvpKfZaUqEvY0vEANH_o",
+            authDomain: "mesengergrok.firebaseapp.com",
+            projectId: "mesengergrok",
+            storageBucket: "mesengergrok.firebasestorage.app",
+            messagingSenderId: "610820074834",
+            appId: "1:610820074834:web:49c2279bf53f9338f01e8b",
+            measurementId: "G-B0NMTXH6HK"
         };
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userProvidedConfig;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+
+        // 1. Инициализация Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (e) {
+            authStatusSpan.textContent = "Ошибка инициализации Firebase!";
+            console.error("Error initializing Firebase:", e);
+        }
+
+        // 2. Аутентификация и слушатель состояния
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                currentUserIdP.textContent = `ID: ${userId.substring(0, 8)}...`;
+                
+                // Переходим к инициализации пользователя и проверке ника
+                await initializeChatUser();
+
+            } else {
+                // Если пользователь не аутентифицирован, используем анонимный вход
+                try {
+                    await setPersistence(auth, browserSessionPersistence);
+                    
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication error:", error);
+                    authStatusSpan.textContent = "Ошибка входа!";
+                    isAuthReady = false;
+                    sendButton.disabled = true;
+                    loadingDiv.textContent = "Не удалось подключиться к чату. Проверьте консоль на наличие ошибок.";
+                }
+            }
+        });
+
+        // 3. Инициализация пользователя и проверка ника
+        async function initializeChatUser() {
+            // Путь к приватному профилю пользователя: artifacts/{appId}/users/{userId}/profile/data
+            const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/data`);
+
+            try {
+                const docSnap = await getDoc(profileDocRef);
+
+                if (docSnap.exists() && docSnap.data().nickname) {
+                    // Ник найден - используем его
+                    userName = docSnap.data().nickname;
+                    finalizeInitialization();
+                } else {
+                    // Ник не найден - просим ввести
+                    showNicknameInput();
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                // В случае ошибки показываем ввод ника
+                showNicknameInput();
+            }
+        }
+
+        // 4. Показ и обработка ввода ника
+        function showNicknameInput() {
+            nicknameModal.classList.remove('hidden');
+            nicknameInput.focus();
+
+            nicknameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !nicknameSubmitButton.disabled) {
+                    window.submitNickname();
+                }
+            });
+        }
+
+        window.submitNickname = async function() {
+            // Получаем то, что ввел пользователь, и удаляем пробелы
+            const rawNick = nicknameInput.value.trim();
+            
+            // 1. Валидация
+            const validRegex = /^[a-zA-Z0-9_]{3,20}$/; // Только латиница, цифры, подчеркивание, от 3 до 20 символов
+            if (!validRegex.test(rawNick)) {
+                nicknameError.classList.remove('hidden');
+                return;
+            }
+
+            nicknameError.classList.add('hidden');
+            nicknameSubmitButton.disabled = true;
+            nicknameSubmitButton.textContent = 'Сохранение...';
+
+            // 2. Форматирование (@username)
+            const finalNick = `@${rawNick}`;
+
+            const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/data`);
+            
+            try {
+                // Сохраняем ник в приватном профиле
+                await setDoc(profileDocRef, { nickname: finalNick, lastUpdated: serverTimestamp() }, { merge: true });
+                userName = finalNick;
+                nicknameModal.classList.add('hidden');
+                finalizeInitialization();
+            } catch (error) {
+                console.error("Error saving nickname:", error);
+                nicknameError.textContent = "Ошибка сохранения ника. Попробуйте снова.";
+                nicknameError.classList.remove('hidden');
+                nicknameSubmitButton.disabled = false;
+                nicknameSubmitButton.textContent = 'Продолжить';
+            }
+        }
+
+        // 5. Завершение инициализации (запуск чата)
+        function finalizeInitialization() {
+            authStatusSpan.textContent = `В сети как: ${userName}`;
+            sendButton.disabled = false;
+            isAuthReady = true;
+            messageInput.focus();
+
+            // Запуск слушателя Firestore
+            setupRealtimeListener();
+        }
+
+
+        // 6. Слушатель сообщений в реальном времени
+        function setupRealtimeListener() {
+            if (!isAuthReady) return;
+
+            // Публичный путь к коллекции: artifacts/{appId}/public/data/messages
+            const publicChatPath = `artifacts/${appId}/public/data/messages`;
+            const messagesRef = collection(db, publicChatPath);
+            // Сортируем по времени, по возрастанию (новые внизу)
+            const q = query(messagesRef, orderBy("timestamp", "asc")); 
+
+            onSnapshot(q, (snapshot) => {
+                loadingDiv.style.display = 'none'; // Скрываем "Загрузка"
+                messagesDiv.innerHTML = ''; // Очистка перед добавлением новых сообщений
+                
+                // Проверяем, нужно ли скроллить вниз (если пользователь уже был внизу)
+                const isScrolledToBottom = messagesDiv.scrollHeight - messagesDiv.clientHeight <= messagesDiv.scrollTop + 1;
+
+
+                snapshot.docs.forEach((doc) => {
+                    const data = doc.data();
+                    displayMessage(data, data.userId === userId);
+                });
+                
+                // Прокрутка вниз к новым сообщениям
+                if (isScrolledToBottom || snapshot.docChanges().length > 0) {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+            }, (error) => {
+                console.error("Error listening to messages:", error);
+                loadingDiv.textContent = "Ошибка загрузки сообщений. Попробуйте обновить страницу.";
+            });
+        }
+
+        // 7. Функция отображения сообщения
+        function displayMessage(data, isCurrentUser) {
+            const messageElement = document.createElement('div');
+            // Определение стилей "пузыря"
+            const alignment = isCurrentUser ? 
+                'self-end bg-indigo-500 text-white rounded-br-none' : 
+                'self-start bg-gray-200 text-gray-800 rounded-tl-none'; 
+            
+            const position = isCurrentUser ? 'flex justify-end' : 'flex justify-start';
+
+            // Форматирование времени
+            const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 'сейчас';
+
+            // Определение имени отправителя
+            let senderName = data.userName;
+            if (isCurrentUser) {
+                senderName = 'Вы'; 
+            } else if (!data.userName) {
+                senderName = `Пользователь (${data.userId ? data.userId.substring(0, 4) : 'ID'})`;
+            }
+
+            messageElement.className = `${position} w-full mb-3`; 
+            messageElement.innerHTML = `
+                <div class="max-w-[85%] md:max-w-[70%] flex flex-col items-${isCurrentUser ? 'end' : 'start'}">
+                    <span class="text-xs font-semibold ${isCurrentUser ? 'text-indigo-700' : 'text-gray-600'} mb-1 px-1">
+                        ${senderName}
+                    </span>
+                    <div class="px-4 py-2 rounded-xl shadow-md ${alignment}">
+                        <p class="whitespace-pre-wrap break-words">${data.text}</p>
+                        <span class="text-xs mt-1 block ${isCurrentUser ? 'opacity-75 text-right text-indigo-100' : 'opacity-75 text-left text-gray-600'}">${time}</span>
+                    </div>
+                </div>
+            `;
+            messagesDiv.appendChild(messageElement);
+        }
+
+        // 8. Функция отправки сообщения (доступна глобально)
+        window.sendMessage = async function() {
+            if (!isAuthReady || !db || !userId || !userName) {
+                console.error("Chat not fully initialized or user data missing.");
+                errorFeedback.textContent = "Ошибка: чат еще не инициализирован. Введите ник.";
+                errorFeedback.classList.remove('hidden');
+                return;
+            }
+
+            const text = messageInput.value.trim();
+            if (text === "") return;
+
+            sendButton.disabled = true;
+            errorFeedback.classList.add('hidden');
+
+            const message = {
+                userId: userId,
+                userName: userName, // Используем сохраненный ник (@username)
+                text: text,
+                timestamp: serverTimestamp() // Время на сервере
+            };
+
+            try {
+                const publicChatPath = `artifacts/${appId}/public/data/messages`;
+                await addDoc(collection(db, publicChatPath), message);
+
+                messageInput.value = ""; // Очистка ввода
+
+            } catch (error) {
+                console.error("Error sending message:", error);
+                errorFeedback.textContent = "Не удалось отправить сообщение. Попробуйте позже.";
+                errorFeedback.classList.remove('hidden');
+            } finally {
+                sendButton.disabled = false;
+                messageInput.focus(); // Возвращаем фокус на поле ввода
+            }
+        }
+
+        // Отправка по нажатию Enter в поле ввода
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                window.sendMessage();
+            }
+        });
+
     </script>
 </body>
 </html>
