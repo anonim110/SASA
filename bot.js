@@ -22,7 +22,7 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 
-// --- Configuration (Используем переменные окружения) ---
+// --- Configuration (Используем переменные окружния) ---
 const firebaseConfig = JSON.parse(__firebase_config);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
