@@ -1,8 +1,12 @@
 {
-  "name": "scam",
+  "name": "superchat-react-server",
   "version": "1.0.0",
+  "description": "Simple Express server to host the chat application.",
   "main": "bot.js",
-  "scripts": { "start": "node bot.js" },
-  "dependencies": { "telegraf": "^4.16.3" },
-  "engines": { "node": ">=20" }
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
 }
