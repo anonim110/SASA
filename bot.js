@@ -1,10 +1,13 @@
-// --- ИМПОРТЫ ДЛЯ NODE.JS (предполагается 'npm install firebase') ---
+// --- ИМПОРТЫ ДЛЯ NODE.JS ---
+// Analytics (getAnalytics) удален, так как он предназначен только для браузеров.
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
 // --- КОНСТАНТЫ И КОНФИГУРАЦИЯ ---
-// Переменные окружения, предоставляемые средой
+// ВНИМАНИЕ: Конфигурация Firebase (firebaseConfig) берется из 
+// переменной среды __firebase_config, чтобы обеспечить безопасное 
+// и корректное подключение к базе данных Canvas.
 const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const PUBLIC_COLLECTION = 'tanks_games'; // Коллекция для публичных игр
