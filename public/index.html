@@ -1,46 +1,53 @@
 <!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Multiplayer Tanks</title>
-<style>
-body { margin:0; overflow:hidden; background:#111; color:#ddd; font-family:Arial }
-#ui { position:fixed; left:8px; top:8px; z-index:10 }
-</style>
-</head>
-<body>
-<div id="ui">WASD - движение · Клик - стрельба</div>
-<canvas id="c"></canvas>
-<script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
-
-
-const socket = new WebSocket((location.protocol==='https:'?'wss://':'ws://') + location.host);
-let myId = null;
-let state = { players:{}, bullets:[] };
-
-
-socket.addEventListener('open', ()=>console.log('ws open'));
-socket.addEventListener('message', (ev)=>{
-const data = JSON.parse(ev.data);
-if (data.type === 'init') { myId = data.id; state.players = data.players; state.bullets = data.bullets; }
-else if (data.type === 'state') { state.players = data.players; state.bullets = data.bullets; }
+if (e.key==='s') input.down=false;
+if (e.key==='a') input.left=false;
+if (e.key==='d') input.right=false;
 });
 
 
-// input
-const input = { up:false, down:false, left:false, right:false, aimX:0, aimY:0, shoot:false };
-window.addEventListener('keydown', e => { if (e.key==='w') input.up=true; if (e.key==='s') input.down=true; if (e.key==='a') input.left=true; if (e.key==='d') input.right=true; });
-window.addEventListener('keyup', e => { if (e.key==='w') input.up=false; if (e.key==='s') input.down=false; if (e.key==='a') input.left=false; if (e.key==='d') input.right=false; });
-canvas.addEventListener('mousemove', e => { input.aimX = e.clientX; input.aimY = e.clientY; });
-canvas.addEventListener('mousedown', e => { input.shoot = true; setTimeout(()=>input.shoot=false, 50); });
+canvas.addEventListener('mousemove', e => {
+input.aimX = e.clientX;
+input.aimY = e.clientY;
+});
 
 
-// send input on interval
-setInterval(()=>{ if (!myId) return; socket.send(JSON.stringify({ type:'input', id: myId, input })); }, 50);
+canvas.addEventListener('mousedown', e => {
+input.shoot = true;
+setTimeout(()=> input.shoot=false, 80);
+});
+
+
+// сглаживаем движения
+function smoothStep(target, current, speed = 0.2) {
+return current + (target - current) * speed;
+}
+
+
+setInterval(()=>{
+if (!myId) return;
+
+
+// плавный переход между 0 и 1
+smoothInput.up = smoothStep(input.up ? 1 : 0, smoothInput.up);
+smoothInput.down = smoothStep(input.down ? 1 : 0, smoothInput.down);
+smoothInput.left = smoothStep(input.left ? 1 : 0, smoothInput.left);
+smoothInput.right = smoothStep(input.right ? 1 : 0, smoothInput.right);
+
+
+socket.send(JSON.stringify({
+type:'input',
+id: myId,
+input: {
+up: smoothInput.up > 0.1,
+down: smoothInput.down > 0.1,
+left: smoothInput.left > 0.1,
+right: smoothInput.right > 0.1,
+aimX: input.aimX,
+aimY: input.aimY,
+shoot: input.shoot
+}
+}));
+}, 50);(()=>{ if (!myId) return; socket.send(JSON.stringify({ type:'input', id: myId, input })); }, 50);
 
 
 function draw(){
