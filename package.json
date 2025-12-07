@@ -1,13 +1,13 @@
 {
-  "name": "sasa-bot",
+  "name": "multiplayer-tanks",
   "version": "1.0.0",
-  "description": "A simple Node.js bot.",
-  "main": "bot.js",
-  "type": "module",
+  "description": "Multiplayer tank game with Node.js, Express and WebSocket",
+  "main": "server.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "firebase": "^11.6.1"
+    "express": "^4.18.2",
+    "ws": "^8.15.0"
   }
 }
