@@ -1,20 +1,13 @@
 {
-  "name": "tanki-online-websocket-server",
+  "name": "sasa-bot",
   "version": "1.0.0",
-  "description": "WebSocket server for the Tanki Online game.",
-  "main": "server.js",
+  "description": "A simple Node.js bot.",
+  "main": "bot.js",
+  "type": "module",
   "scripts": {
     "start": "node bot.js"
   },
-  "keywords": [
-    "websocket",
-    "game",
-    "node.js",
-    "multiplayer"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "ws": "^8.16.0"
+    "firebase": "^11.6.1"
   }
 }
