@@ -1,12 +1,20 @@
 {
-  "name": "superchat-react-server",
+  "name": "tanki-online-websocket-server",
   "version": "1.0.0",
-  "description": "Simple Express server to host the chat application.",
-  "main": "bot.js",
+  "description": "WebSocket server for the Tanki Online game.",
+  "main": "server.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node server.js"
   },
+  "keywords": [
+    "websocket",
+    "game",
+    "node.js",
+    "multiplayer"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2"
+    "ws": "^8.16.0"
   }
 }
