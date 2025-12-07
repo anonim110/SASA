@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multiplayer Tanks</title>
+<style>
+body { margin:0; overflow:hidden; background:#111; color:#ddd; font-family:Arial }
+#ui { position:fixed; left:8px; top:8px; z-index:10 }
+</style>
+</head>
+<body>
+<div id="ui">WASD - движение · Клик - стрельба</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+
+const socket = new WebSocket((location.protocol==='https:'?'wss://':'ws://') + location.host);
+let myId = null;
+let state = { players:{}, bullets:[] };
+
+
+socket.addEventListener('open', ()=>console.log('ws open'));
+socket.addEventListener('message', (ev)=>{
+const data = JSON.parse(ev.data);
+if (data.type === 'init') { myId = data.id; state.players = data.players; state.bullets = data.bullets; }
+else if (data.type === 'state') { state.players = data.players; state.bullets = data.bullets; }
+});
+
+
+// input
+const input = { up:false, down:false, left:false, right:false, aimX:0, aimY:0, shoot:false };
+window.addEventListener('keydown', e => { if (e.key==='w') input.up=true; if (e.key==='s') input.down=true; if (e.key==='a') input.left=true; if (e.key==='d') input.right=true; });
+window.addEventListener('keyup', e => { if (e.key==='w') input.up=false; if (e.key==='s') input.down=false; if (e.key==='a') input.left=false; if (e.key==='d') input.right=false; });
+canvas.addEventListener('mousemove', e => { input.aimX = e.clientX; input.aimY = e.clientY; });
+canvas.addEventListener('mousedown', e => { input.shoot = true; setTimeout(()=>input.shoot=false, 50); });
+
+
+// send input on interval
+setInterval(()=>{ if (!myId) return; socket.send(JSON.stringify({ type:'input', id: myId, input })); }, 50);
+
+
+function draw(){
+ctx.clearRect(0,0,canvas.width, canvas.height);
+// draw players
+for (const id in state.players) {
+const p = state.players[id];
+ctx.save();
+ctx.translate(p.x, p.y);
+ctx.rotate(p.angle||0);
+// tank body
+ctx.fillStyle = (parseInt(id)===myId)?'#6cf':'#fc6';
+ctx.fillRect(-16,-12,32,24);
+// turret
+ctx.fillStyle = '#222';
+ctx.fillRect(0,-5,20,10);
+ctx.restore();
+// hp
+ctx.fillStyle = 'white';
+ctx.fillText('HP:'+Math.round(p.hp||0), p.x-20, p.y-18);
+}
+// bullets
+for (const b of state.bullets) {
+ctx.beginPath(); ctx.arc(b.x, b.y, 4,0,Math.PI*2); ctx.fill();
+}
+
+
+requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
