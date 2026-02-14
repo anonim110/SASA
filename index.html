@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Для моей любимой кици</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-pink: #ff4d6d;
+            --dark-pink: #c9184a;
+            --light-pink: #ffb3c1;
+            --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #4a0e1c 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            perspective: 1500px;
+        }
+
+        /* Контейнер всей сцены */
+        .scene {
+            position: relative;
+            width: 350px;
+            height: 450px;
+            z-index: 10;
+        }
+
+        /* 3D Сердце-замок */
+        .lock-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .heart-lock {
+            width: 120px;
+            height: 120px;
+            background: var(--primary-pink);
+            position: relative;
+            transform: rotate(-45deg);
+            box-shadow: 0 0 50px rgba(255, 77, 109, 0.6), inset -10px -10px 20px rgba(0,0,0,0.2);
+            animation: heartbeat 1.2s infinite;
+        }
+
+        .heart-lock::before, .heart-lock::after {
+            content: '';
+            width: 120px;
+            height: 120px;
+            background: var(--primary-pink);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: inset 5px 5px 15px rgba(255,255,255,0.2);
+        }
+
+        .heart-lock::before { top: -60px; left: 0; }
+        .heart-lock::after { left: 60px; top: 0; }
+
+        @keyframes heartbeat {
+            0% { transform: rotate(-45deg) scale(1); }
+            15% { transform: rotate(-45deg) scale(1.15); }
+            30% { transform: rotate(-45deg) scale(1); }
+            45% { transform: rotate(-45deg) scale(1.1); }
+            60% { transform: rotate(-45deg) scale(1); }
+        }
+
+        /* Текст под сердцем */
+        .hint {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            white-space: nowrap;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            animation: fadeInOut 2s infinite;
+        }
+
+        /* Сама валентинка (скрыта в начале) */
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(255, 77, 109, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            transform: rotateY(90deg) scale(0.1);
+            opacity: 0;
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .card.open {
+            transform: rotateY(0deg) scale(1);
+            opacity: 1;
+        }
+
+        /* Стиль текста (рукописный) */
+        .message {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.8rem;
+            color: var(--dark-pink);
+            line-height: 1.1;
+            margin: 20px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s delay 0.5s;
+        }
+
+        .card.open .message {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.6s;
+        }
+
+        /* Декор и частицы */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .rose-petal {
+            position: absolute;
+            background: #ff4d6d;
+            border-radius: 50% 0 50% 50%;
+            opacity: 0.7;
+            animation: fall 5s linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        .glass-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .close-btn {
+            margin-top: 30px;
+            padding: 10px 20px;
+            border: 1px solid var(--primary-pink);
+            color: var(--primary-pink);
+            border-radius: 30px;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: var(--primary-pink);
+            color: white;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-overlay"></div>
+
+    <div class="scene">
+        <!-- Замок-сердце -->
+        <div class="lock-container" id="lock" onclick="unlock()">
+            <div class="heart-lock"></div>
+            <div class="hint">Коснись сердца</div>
+        </div>
+
+        <!-- Открытка -->
+        <div class="card" id="card">
+            <div class="w-12 h-px bg-pink-200 mb-6"></div>
+            
+            <div class="message" id="typed-text">
+                С 14 февралям,<br>
+                моя дорогая киця!<br>
+                Люблю тебя очень сильно
+            </div>
+
+            <div class="w-12 h-px bg-pink-200 mt-6"></div>
+            
+            <p class="mt-4 text-gray-400 text-xs italic">Навсегда твой</p>
+            
+            <div class="close-btn" onclick="reset()">Закрыть</div>
+        </div>
+    </div>
+
+    <script>
+        function unlock() {
+            const lock = document.getElementById('lock');
+            const card = document.getElementById('card');
+            
+            // Анимация исчезновения сердца
+            lock.style.transform = 'translate(-50%, -50%) scale(0) rotate(360deg)';
+            lock.style.opacity = '0';
+            
+            setTimeout(() => {
+                lock.classList.add('hidden');
+                card.classList.add('open');
+                startMagic();
+            }, 600);
+        }
+
+        function reset() {
+            const lock = document.getElementById('lock');
+            const card = document.getElementById('card');
+            
+            card.classList.remove('open');
+            setTimeout(() => {
+                lock.classList.remove('hidden');
+                lock.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
+                lock.style.opacity = '1';
+            }, 600);
+        }
+
+        function startMagic() {
+            // Создаем лепестки роз
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createPetal();
+                }, i * 100);
+            }
+        }
+
+        function createPetal() {
+            const petal = document.createElement('div');
+            petal.className = 'rose-petal particle';
+            
+            const size = Math.random() * 15 + 10;
+            petal.style.width = size + 'px';
+            petal.style.height = size + 'px';
+            
+            petal.style.left = Math.random() * 100 + 'vw';
+            petal.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            petal.style.background = `hsl(${Math.random() * 20 + 340}, 100%, 70%)`;
+            
+            document.body.appendChild(petal);
+            
+            setTimeout(() => {
+                petal.remove();
+            }, 5000);
+        }
+
+        // Фоновые искорки
+        setInterval(() => {
+            const spark = document.createElement('div');
+            spark.className = 'particle';
+            spark.innerHTML = '✨';
+            spark.style.left = Math.random() * 100 + 'vw';
+            spark.style.top = Math.random() * 100 + 'vh';
+            spark.style.fontSize = '10px';
+            spark.style.color = '#fff';
+            spark.style.transition = 'all 1.5s';
+            spark.style.opacity = '1';
+            
+            document.body.appendChild(spark);
+            
+            setTimeout(() => {
+                spark.style.opacity = '0';
+                spark.style.transform = 'translateY(-20px)';
+                setTimeout(() => spark.remove(), 1500);
+            }, 100);
+        }, 300);
+    </script>
+</body>
+</html>
