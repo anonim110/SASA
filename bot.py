@@ -21,7 +21,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 # ==========================================
 # НАСТРОЙКИ
 # ==========================================
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7799303200:AAH5S_webBddEjkpUVYH9X4K1MnykO72aYs")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8634451576:AAEaSJ5ubfFC__xFL1cIMYMfJC2khCbRP0U")
 
 def get_proxy_url() -> Optional[str]:
     is_pa = 'PYTHONANYWHERE_DOMAIN' in os.environ or '.pythonanywhere.com' in socket.getfqdn()
